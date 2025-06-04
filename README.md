@@ -1,6 +1,6 @@
 # MangaDex TUI
 
-A terminal user interface for MangaDex.org built with Go and tview.
+A terminal user interface for mangadex.org built with Go and tview.
 
 ## Features
 
@@ -13,7 +13,7 @@ A terminal user interface for MangaDex.org built with Go and tview.
 ## Installation
 
 ```bash
-go install github.com/yourusername/mangadex-tui/cmd/mangadex-tui@latest
+go install github.com/sangnt1552314/mangadex-tui/cmd/mangadex-tui@latest
 ```
 
 ## Usage
