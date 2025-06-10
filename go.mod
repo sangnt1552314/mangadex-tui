@@ -1,4 +1,4 @@
-module mangadex-tui
+module github.com/sangnt1552314/mangadex-tui
 
 go 1.21
 
