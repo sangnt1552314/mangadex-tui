@@ -14,19 +14,15 @@ import (
 )
 
 type HomePage struct {
-	app         interfaces.AppInterface
-	rootView    *tview.Flex
-	mainContent *tview.Flex
+	app      interfaces.AppInterface
+	rootView *tview.Flex
 }
 
 func NewHomePage(app interfaces.AppInterface) *HomePage {
-	mainContent := tview.NewFlex().SetDirection(tview.FlexRow)
-	mainContent.SetBorder(false).SetTitleAlign(tview.AlignLeft)
 
 	return &HomePage{
-		app:         app,
-		rootView:    tview.NewFlex(),
-		mainContent: mainContent,
+		app:      app,
+		rootView: tview.NewFlex(),
 	}
 }
 
@@ -48,45 +44,50 @@ func (p *HomePage) Init(app interfaces.AppInterface) {
 		case tcell.KeyCtrlC:
 			app.Stop()
 			return nil
-		case 'h':
-			app.SwitchToPage("home")
-			return nil
 		}
 		return event
 	})
 
 	// Layout
-	p.rootView.SetDirection(tview.FlexColumn).
+	p.rootView.SetDirection(tview.FlexRow).
 		SetBorder(false)
 
-	menu := tview.NewFlex().SetDirection(tview.FlexRow)
-	menu_list := tview.NewList()
-	// donate := tview.NewTextView().SetText("Support MangaDex at https://mangadex.org/").SetTextAlign(tview.AlignCenter)
-
-	p.rootView.AddItem(menu, 0, 1, false)
-	p.rootView.AddItem(p.mainContent, 0, 8, false)
+	// Layout - Main Content
+	mainContent := p.setupMainContent()
 
 	// Layout - Menu
-	menu.SetBorder(true).
-		SetTitle("Menu").
-		SetTitleAlign(tview.AlignLeft).
-		SetTitleColor(tview.Styles.PrimaryTextColor)
-	menu_list.AddItem("⌂ Home", "", 'h', func() {
-		app.SwitchToPage("home")
-	})
-	menu_list.AddItem("⏻ Exit ", "", 'q', func() {
-		app.Stop()
-	})
-	menu_list.AddItem("ℹ About", "", 'a', func() {
-		app.SwitchToPage("about")
-	})
-	menu.AddItem(menu_list, 0, 8, false)
+	menu := p.setupMenu()
 
-	// Layout - Main Content
-	p.setupMainContent()
+	// Add components to the root view
+	p.rootView.AddItem(mainContent, 0, 8, false)
+	p.rootView.AddItem(menu, 0, 1, false)
 }
 
-func (p *HomePage) setupMainContent() {
+func (p *HomePage) setupMenu() tview.Primitive {
+	// Replace List with Flex set to horizontal direction
+	menuFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true)
+
+	exitButton := tview.NewButton("⏻ Exit")
+	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	exitButton.SetSelectedFunc(func() {
+		p.app.Stop()
+	})
+
+	aboutButton := tview.NewButton("ℹ About")
+	aboutButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	aboutButton.SetSelectedFunc(func() {
+		p.app.SwitchToPage("about")
+	})
+
+	// Add buttons to the flex container with equal proportion
+	menuFlex.AddItem(aboutButton, 9, 1, false)
+	menuFlex.AddItem(exitButton, 9, 1, false)
+
+	return menuFlex
+}
+
+func (p *HomePage) setupMainContent() tview.Primitive {
 	search := p.setInputSearchComponent()
 
 	current_poplar := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -94,13 +95,18 @@ func (p *HomePage) setupMainContent() {
 	popular_mangalist := tview.NewTable()
 	p.setTableHeaderManga(popular_mangalist)
 
-	p.mainContent.AddItem(search, 0, 1, false)
-	p.mainContent.AddItem(current_poplar, 0, 5, false)
+	mainContent := tview.NewFlex().SetDirection(tview.FlexRow)
+	mainContent.SetBorder(false).SetTitleAlign(tview.AlignLeft)
+
+	mainContent.AddItem(search, 0, 1, false)
+	mainContent.AddItem(current_poplar, 0, 5, false)
 
 	current_poplar.AddItem(popular_mangalist, 0, 1, false)
 
 	// Initialize manga data
 	p.initMangaData(popular_mangalist, 100)
+
+	return mainContent
 }
 
 func (p *HomePage) setInputSearchComponent() tview.Primitive {

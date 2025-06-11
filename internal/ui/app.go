@@ -50,6 +50,7 @@ func (a *App) setupPages() {
 	a.SetRoot(a.Pages, true)
 
 	a.RegisterPage(pages.NewHomePage(a))
+	a.RegisterPage(pages.NewAboutPage(a))
 
 	a.SwitchToPage("home")
 }
@@ -63,8 +64,8 @@ func (a *App) SwitchToPage(name string) {
 }
 
 func (a *App) RegisterPage(page interfaces.Page) {
-    page.Init(a)
-    a.AddPage(page.Name(), page.View(), page.Name() == "home")
+	page.Init(a)
+	a.AddPage(page.Name(), page.View(), page.Name() == "home")
 }
 
 func (a *App) EnableMouse(enable bool) {
