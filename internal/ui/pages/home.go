@@ -158,7 +158,7 @@ func (p *HomePage) initMangaData(mangaList *tview.Table, limit int) {
 	for i, manga := range mangas {
 		titleCell := tview.NewTableCell(manga.Title).SetReference(&manga).SetMaxWidth(30)
 		mangaList.SetCell(i+1, 0, titleCell)
-		mangaList.SetCell(i+1, 1, tview.NewTableCell(manga.Status))
+		mangaList.SetCell(i+1, 1, p.formatStatus(manga.Status))
 		mangaList.SetCell(i+1, 2, tview.NewTableCell(strconv.Itoa(manga.Year)))
 	}
 
@@ -171,4 +171,19 @@ func (p *HomePage) initMangaData(mangaList *tview.Table, limit int) {
 	})
 
 	mangaList.SetSelectable(true, false)
+}
+
+func (p *HomePage) formatStatus(status string) *tview.TableCell {
+	switch status {
+	case "ongoing":
+		return tview.NewTableCell("Ongoing").SetTextColor(tcell.ColorGreen)
+	case "completed":
+		return tview.NewTableCell("Completed").SetTextColor(tcell.ColorBlue)
+	case "hiatus":
+		return tview.NewTableCell("Hiatus").SetTextColor(tcell.ColorYellow)
+	case "cancelled":
+		return tview.NewTableCell("Cancelled").SetTextColor(tcell.ColorRed)
+	default:
+		return tview.NewTableCell(status).SetTextColor(tcell.ColorWhite)
+	}
 }
