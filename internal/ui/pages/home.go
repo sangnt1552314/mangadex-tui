@@ -110,10 +110,15 @@ func (p *HomePage) setupMainContent() tview.Primitive {
 	featureLatestFlex.AddItem(latestFlex, 0, 1, false)
 
 	// Manga List Table
-	mangaList := tview.NewTable()
-	p.setTableHeaderManga(mangaList)
-	p.initMangaData(mangaList, 10)
-	featureFlex.AddItem(mangaList, 0, 1, false)
+	featureMangaList := tview.NewTable()
+	p.setTableHeaderManga(featureMangaList)
+	p.getMangas(featureMangaList, 10, "feature")
+	featureFlex.AddItem(featureMangaList, 0, 1, false)
+
+	latestMangaList := tview.NewTable()
+	p.setTableHeaderManga(latestMangaList)
+	p.getMangas(latestMangaList, 10, "latest")
+	latestFlex.AddItem(latestMangaList, 0, 1, false)
 
 	mainContent.AddItem(searchBox, 0, 1, false)
 	mainContent.AddItem(popularFlex, 0, 4, false)
@@ -147,8 +152,8 @@ func (p *HomePage) setTableHeaderManga(mangaList *tview.Table) {
 	mangaList.SetFixed(1, 0)
 }
 
-func (p *HomePage) initMangaData(mangaList *tview.Table, limit int) {
-	mangas, err := api.GetLatestManga(limit)
+func (p *HomePage) getMangas(mangaList *tview.Table, limit int, mangaType string) {
+	mangas, err := api.GetManga(limit, mangaType)
 
 	if err != nil {
 		log.Println("Error fetching manga data:", err)

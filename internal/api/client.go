@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -81,11 +80,10 @@ func (c *Client) Post(url string, body interface{}) (*http.Response, error) {
 	return resp, nil
 }
 
-func GetLatestManga(limit int) ([]models.Manga, error) {
+func GetManga(limit int, mangaType string) ([]models.Manga, error) {
 	client := NewClient()
 
-	url := fmt.Sprintf("/manga?limit=%d&order[rating]=desc", limit)
-	log.Println("Fetching latest manga from URL:", baseURL+url)
+	url := getMangaDexApiUrl(limit, mangaType)
 
 	if limit <= 0 {
 		return nil, fmt.Errorf("limit must be greater than 0")
@@ -127,4 +125,17 @@ func GetLatestManga(limit int) ([]models.Manga, error) {
 	}
 
 	return mangas, nil
+}
+
+func getMangaDexApiUrl(limit int, mangaType string) string {
+	switch mangaType {
+	case "popular":
+		return fmt.Sprintf("/manga?limit=%d&order[rating]=desc", limit)
+	case "latest":
+		return fmt.Sprintf("/manga?limit=%d&order[createdAt]=desc", limit)
+	case "feature":
+		return fmt.Sprintf("/manga?limit=%d&order[followedCount]=desc", limit)
+	default:
+		return fmt.Sprintf("/manga?limit=%d&order[rating]=desc", limit)
+	}
 }
