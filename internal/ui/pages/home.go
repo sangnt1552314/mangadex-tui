@@ -10,7 +10,6 @@ import (
 	"github.com/sangnt1552314/mangadex-tui/internal/api"
 	"github.com/sangnt1552314/mangadex-tui/internal/models"
 	"github.com/sangnt1552314/mangadex-tui/internal/ui/interfaces"
-	// "github.com/sangnt1552314/mangadex-tui/internal/models"
 )
 
 type HomePage struct {
@@ -59,14 +58,14 @@ func (p *HomePage) Init(app interfaces.AppInterface) {
 	menu := p.setupMenu()
 
 	// Add components to the root view
-	p.rootView.AddItem(mainContent, 0, 8, false)
+	p.rootView.AddItem(mainContent, 0, 9, false)
 	p.rootView.AddItem(menu, 0, 1, false)
 }
 
 func (p *HomePage) setupMenu() tview.Primitive {
 	// Replace List with Flex set to horizontal direction
 	menuFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
-	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true)
+	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true).SetTitle("Menu").SetTitleAlign(tview.AlignLeft)
 
 	exitButton := tview.NewButton("⏻ Exit")
 	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
@@ -88,23 +87,37 @@ func (p *HomePage) setupMenu() tview.Primitive {
 }
 
 func (p *HomePage) setupMainContent() tview.Primitive {
-	search := p.setInputSearchComponent()
-
-	current_poplar := tview.NewFlex().SetDirection(tview.FlexRow)
-	current_poplar.SetBorder(true).SetTitle("Popular").SetTitleAlign(tview.AlignLeft)
-	popular_mangalist := tview.NewTable()
-	p.setTableHeaderManga(popular_mangalist)
-
 	mainContent := tview.NewFlex().SetDirection(tview.FlexRow)
 	mainContent.SetBorder(false).SetTitleAlign(tview.AlignLeft)
 
-	mainContent.AddItem(search, 0, 1, false)
-	mainContent.AddItem(current_poplar, 0, 5, false)
+	// Search Component
+	searchBox := p.setInputSearchComponent()
 
-	current_poplar.AddItem(popular_mangalist, 0, 1, false)
+	// Popular Flex
+	popularFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	popularFlex.SetBorder(true).SetTitle("Popular").SetTitleAlign(tview.AlignLeft)
 
-	// Initialize manga data
-	p.initMangaData(popular_mangalist, 100)
+	// Feature & Latest Manga Flex
+	featureLatestFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+
+	featureFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	featureFlex.SetBorder(true).SetTitle("Featured").SetTitleAlign(tview.AlignLeft)
+
+	latestFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	latestFlex.SetBorder(true).SetTitle("Latest").SetTitleAlign(tview.AlignLeft)
+
+	featureLatestFlex.AddItem(featureFlex, 0, 1, false)
+	featureLatestFlex.AddItem(latestFlex, 0, 1, false)
+
+	// Manga List Table
+	mangaList := tview.NewTable()
+	p.setTableHeaderManga(mangaList)
+	p.initMangaData(mangaList, 10)
+	featureFlex.AddItem(mangaList, 0, 1, false)
+
+	mainContent.AddItem(searchBox, 0, 1, false)
+	mainContent.AddItem(popularFlex, 0, 4, false)
+	mainContent.AddItem(featureLatestFlex, 0, 4, false)
 
 	return mainContent
 }
@@ -118,44 +131,44 @@ func (p *HomePage) setInputSearchComponent() tview.Primitive {
 	return search
 }
 
-func (p *HomePage) setTableHeaderManga(manga_list *tview.Table) {
-	manga_list.SetCell(0, 0, tview.NewTableCell("Title").
-		SetMaxWidth(18).SetSelectable(false).
-		SetTextColor(tcell.ColorYellow).
-		SetAttributes(tcell.AttrBold))
+func (p *HomePage) setTableHeaderManga(mangaList *tview.Table) {
+	mangaList.SetCell(0, 0, tview.NewTableCell("Title").
+		SetSelectable(false).
+		SetTextColor(tcell.ColorOrange))
 
-	manga_list.SetCell(0, 1, tview.NewTableCell("Status").
-		SetMaxWidth(18).SetSelectable(false).
-		SetTextColor(tcell.ColorYellow).
-		SetAttributes(tcell.AttrBold))
+	mangaList.SetCell(0, 1, tview.NewTableCell("Status").
+		SetSelectable(false).
+		SetTextColor(tcell.ColorYellow))
 
-	manga_list.SetCell(0, 2, tview.NewTableCell("Year").
-		SetMaxWidth(18).SetSelectable(false).
-		SetTextColor(tcell.ColorYellow).
-		SetAttributes(tcell.AttrBold))
-	manga_list.SetFixed(1, 0)
+	mangaList.SetCell(0, 2, tview.NewTableCell("Year").
+		SetSelectable(false).
+		SetTextColor(tcell.ColorDarkOrange))
+
+	mangaList.SetFixed(1, 0)
 }
 
-func (p *HomePage) initMangaData(manga_list *tview.Table, limit int) {
+func (p *HomePage) initMangaData(mangaList *tview.Table, limit int) {
 	mangas, err := api.GetLatestManga(limit)
 
 	if err != nil {
 		log.Println("Error fetching manga data:", err)
 		return
 	}
+
 	for i, manga := range mangas {
-		titleCell := tview.NewTableCell(manga.Title).SetReference(&manga)
-		manga_list.SetCell(i+1, 0, titleCell)
-		manga_list.SetCell(i+1, 1, tview.NewTableCell(manga.Status))
-		manga_list.SetCell(i+1, 2, tview.NewTableCell(strconv.Itoa(manga.Year)))
-		manga_list.SetSelectedFunc(func(row, _ int) {
-			if row == 0 {
-				return // Skip header row
-			}
-			selectedManga := manga_list.GetCell(row, 0).GetReference().(*models.Manga)
-			log.Printf("Selected Manga: %s (ID: %s)", selectedManga.Title, selectedManga.ID)
-		})
+		titleCell := tview.NewTableCell(manga.Title).SetReference(&manga).SetMaxWidth(30)
+		mangaList.SetCell(i+1, 0, titleCell)
+		mangaList.SetCell(i+1, 1, tview.NewTableCell(manga.Status))
+		mangaList.SetCell(i+1, 2, tview.NewTableCell(strconv.Itoa(manga.Year)))
 	}
 
-	manga_list.SetSelectable(true, false)
+	mangaList.SetSelectedFunc(func(row, _ int) {
+		if row == 0 {
+			return // Skip header row
+		}
+		selectedManga := mangaList.GetCell(row, 0).GetReference().(*models.Manga)
+		log.Printf("Selected Manga: %s (ID: %s)", selectedManga.Title, selectedManga.ID)
+	})
+
+	mangaList.SetSelectable(true, false)
 }
