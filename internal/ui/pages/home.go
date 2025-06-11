@@ -109,17 +109,31 @@ func (p *HomePage) setupMainContent() tview.Primitive {
 	featureLatestFlex.AddItem(featureFlex, 0, 1, false)
 	featureLatestFlex.AddItem(latestFlex, 0, 1, false)
 
-	// Manga List Table
+	// Manga List Tables
+	featureParams := models.MangaQueryParams{
+		Limit: 10,
+		Order: map[string]string{
+			models.OrderByFollowCount: "desc",
+			models.OrderByRating:      "desc",
+		},
+	}
 	featureMangaList := tview.NewTable()
 	p.setTableHeaderManga(featureMangaList)
-	p.getMangas(featureMangaList, 10, "feature")
 	featureFlex.AddItem(featureMangaList, 0, 1, false)
+	p.getMangaData(featureMangaList, featureParams)
 
+	latestParams := models.MangaQueryParams{
+		Limit: 10,
+		Order: map[string]string{
+			models.OrderByCreatedAt: "desc",
+		},
+	}
 	latestMangaList := tview.NewTable()
 	p.setTableHeaderManga(latestMangaList)
-	p.getMangas(latestMangaList, 10, "latest")
+	p.getMangaData(latestMangaList, latestParams)
 	latestFlex.AddItem(latestMangaList, 0, 1, false)
 
+	//Setup Components
 	mainContent.AddItem(searchBox, 0, 1, false)
 	mainContent.AddItem(popularFlex, 0, 4, false)
 	mainContent.AddItem(featureLatestFlex, 0, 4, false)
@@ -152,8 +166,8 @@ func (p *HomePage) setTableHeaderManga(mangaList *tview.Table) {
 	mangaList.SetFixed(1, 0)
 }
 
-func (p *HomePage) getMangas(mangaList *tview.Table, limit int, mangaType string) {
-	mangas, err := api.GetManga(limit, mangaType)
+func (p *HomePage) getMangaData(mangaList *tview.Table, params models.MangaQueryParams) {
+	mangas, err := api.GetManga(params)
 
 	if err != nil {
 		log.Println("Error fetching manga data:", err)

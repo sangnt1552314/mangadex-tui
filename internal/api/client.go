@@ -80,14 +80,10 @@ func (c *Client) Post(url string, body interface{}) (*http.Response, error) {
 	return resp, nil
 }
 
-func GetManga(limit int, mangaType string) ([]models.Manga, error) {
+func GetManga(params models.MangaQueryParams) ([]models.Manga, error) {
 	client := NewClient()
 
-	url := getMangaDexApiUrl(limit, mangaType)
-
-	if limit <= 0 {
-		return nil, fmt.Errorf("limit must be greater than 0")
-	}
+	url := getMangaApiUrl(params)
 
 	resp, err := client.Get(url)
 
@@ -127,15 +123,26 @@ func GetManga(limit int, mangaType string) ([]models.Manga, error) {
 	return mangas, nil
 }
 
-func getMangaDexApiUrl(limit int, mangaType string) string {
-	switch mangaType {
-	case "popular":
-		return fmt.Sprintf("/manga?limit=%d&order[rating]=desc", limit)
-	case "latest":
-		return fmt.Sprintf("/manga?limit=%d&order[createdAt]=desc", limit)
-	case "feature":
-		return fmt.Sprintf("/manga?limit=%d&order[followedCount]=desc", limit)
-	default:
-		return fmt.Sprintf("/manga?limit=%d&order[rating]=desc", limit)
+func getMangaApiUrl(params models.MangaQueryParams) string {
+	queryParams := fmt.Sprintf("?limit=%d", params.Limit)
+
+	for orderKey, orderDir := range params.Order {
+		queryParams += fmt.Sprintf("&order[%s]=%s", orderKey, orderDir)
 	}
+
+	for _, rating := range params.ContentRating {
+		queryParams += fmt.Sprintf("&contentRating[]=%s", rating)
+	}
+
+	for _, include := range params.Includes {
+		queryParams += fmt.Sprintf("&includes[]=%s", include)
+	}
+
+	if params.HasChapters {
+		queryParams += "&hasAvailableChapters=true"
+	}
+
+	url := "/manga" + queryParams
+
+	return url
 }

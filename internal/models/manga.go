@@ -1,5 +1,19 @@
 package models
 
+const (
+	OrderByCreatedAt   = "createdAt"
+	OrderByRating      = "rating"
+	OrderByFollowCount = "followedCount"
+)
+
+type MangaQueryParams struct {
+	Limit         int               `json:"limit"`
+	ContentRating []string          `json:"contentRating"`
+	Order         map[string]string `json:"order"`
+	Includes      []string          `json:"includes"`
+	HasChapters   bool              `json:"hasAvailableChapters"`
+}
+
 type Manga struct {
 	ID            string
 	Title         string
