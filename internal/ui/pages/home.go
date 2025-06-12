@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
@@ -68,13 +69,13 @@ func (p *HomePage) setupMenu() tview.Primitive {
 	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true).SetTitle("Menu").SetTitleAlign(tview.AlignLeft)
 
 	exitButton := tview.NewButton("⏻ Exit")
-	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorRed).Background(tcell.ColorBlack))
 	exitButton.SetSelectedFunc(func() {
 		p.app.Stop()
 	})
 
 	aboutButton := tview.NewButton("ℹ About")
-	aboutButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	aboutButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorGreen).Background(tcell.ColorBlack))
 	aboutButton.SetSelectedFunc(func() {
 		p.app.SwitchToPage("about")
 	})
@@ -91,11 +92,10 @@ func (p *HomePage) setupMainContent() tview.Primitive {
 	mainContent.SetBorder(false).SetTitleAlign(tview.AlignLeft)
 
 	// Search Component
-	searchBox := p.setInputSearchComponent()
+	// searchBox := p.setInputSearchComponent()
 
 	// Popular Flex
-	popularFlex := tview.NewFlex().SetDirection(tview.FlexRow)
-	popularFlex.SetBorder(true).SetTitle("Popular").SetTitleAlign(tview.AlignLeft)
+	popularFlex := p.setupPoplarFlex(tview.NewFlex().SetDirection(tview.FlexRow))
 
 	// Feature & Latest Manga Flex
 	featureLatestFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
@@ -111,34 +111,141 @@ func (p *HomePage) setupMainContent() tview.Primitive {
 
 	// Manga List Tables
 	featureParams := models.MangaQueryParams{
-		Limit: 10,
+		Limit: 9,
 		Order: map[string]string{
 			models.OrderByFollowCount: "desc",
-			models.OrderByRating:      "desc",
 		},
 	}
 	featureMangaList := tview.NewTable()
 	p.setTableHeaderManga(featureMangaList)
 	featureFlex.AddItem(featureMangaList, 0, 1, false)
-	p.getMangaData(featureMangaList, featureParams)
+	p.setMangaListData(featureMangaList, featureParams)
 
 	latestParams := models.MangaQueryParams{
-		Limit: 10,
+		Limit: 9,
 		Order: map[string]string{
 			models.OrderByCreatedAt: "desc",
 		},
 	}
 	latestMangaList := tview.NewTable()
 	p.setTableHeaderManga(latestMangaList)
-	p.getMangaData(latestMangaList, latestParams)
+	p.setMangaListData(latestMangaList, latestParams)
 	latestFlex.AddItem(latestMangaList, 0, 1, false)
 
 	//Setup Components
-	mainContent.AddItem(searchBox, 0, 1, false)
-	mainContent.AddItem(popularFlex, 0, 4, false)
+	// mainContent.AddItem(searchBox, 0, 1, false)
+	mainContent.AddItem(popularFlex, 0, 6, false)
 	mainContent.AddItem(featureLatestFlex, 0, 4, false)
 
 	return mainContent
+}
+func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
+	limit := 5
+	popularParams := models.MangaQueryParams{
+		Limit: limit,
+		Order: map[string]string{
+			models.OrderByRating: "desc",
+		},
+	}
+
+	currentIndex := 0
+	popularManga, err := api.GetManga(popularParams)
+
+	if err != nil {
+		log.Println("Error fetching popular manga:", err)
+		return nil
+	}
+
+	popularFlex.SetBorder(true).SetTitle("Popular").SetTitleAlign(tview.AlignLeft)
+
+	// Create a content area for popular manga
+	popularContent := tview.NewFlex().SetDirection(tview.FlexColumn)
+	p.buildPopularContent(popularContent, popularManga[currentIndex])
+
+	// Create a navigation flex for popular manga
+	popularNavigationFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	popularNavigationFlex.SetBorder(false)
+	leftButton := tview.NewButton("◀ Previous")
+	rightButton := tview.NewButton("Next ▶")
+	leftButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	rightButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	leftButton.SetSelectedFunc(func() {
+		if currentIndex > 0 {
+			currentIndex--
+			p.buildPopularContent(popularContent, popularManga[currentIndex])
+		}
+	})
+	rightButton.SetSelectedFunc(func() {
+		if currentIndex < len(popularManga)-1 {
+			currentIndex++
+			p.buildPopularContent(popularContent, popularManga[currentIndex])
+		}
+	})
+	popularNavigationFlex.AddItem(leftButton, 0, 1, false)
+	popularNavigationFlex.AddItem(rightButton, 0, 1, false)
+
+	// Add popular manga to the content area
+	popularFlex.AddItem(popularContent, 0, 9, false)
+	popularFlex.AddItem(popularNavigationFlex, 0, 1, false)
+
+	return popularFlex
+}
+
+func (p *HomePage) buildPopularContent(popularContent *tview.Flex, manga models.Manga) {
+	popularContent.Clear()
+
+	imageFlex := tview.NewImage()
+
+	infoFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	infoFlex.SetBorder(true).SetTitle("Information").SetTitleAlign(tview.AlignLeft)
+	title := tview.NewTextView().
+		SetText(fmt.Sprintf("Title: %s", manga.Attributes.Title["en"])).
+		SetTextColor(tcell.ColorOrange).
+		SetTextAlign(tview.AlignLeft).
+		SetDynamicColors(true)
+	status := tview.NewTextView().
+		SetText(fmt.Sprintf("Status: %s", p.formatTextStatus(manga.Attributes.Status))).
+		SetTextColor(p.getColorStatus(manga.Attributes.Status)).
+		SetTextAlign(tview.AlignLeft).
+		SetDynamicColors(true)
+	year := tview.NewTextView().
+		SetText(fmt.Sprintf("Year: %s", p.formatTextYear(manga.Attributes.Year))).
+		SetTextColor(tcell.ColorWhite).
+		SetTextAlign(tview.AlignLeft).
+		SetDynamicColors(true)
+	description := tview.NewTextView().
+		SetText(fmt.Sprintf("Description: %s", manga.Attributes.Description["en"])).
+		SetTextColor(tcell.ColorWhite).
+		SetTextAlign(tview.AlignLeft).
+		SetDynamicColors(true)
+	tags := manga.Attributes.Tags
+	tagsView := tview.NewTextView()
+	if len(tags) > 0 {
+		tagText := "Tags: "
+		for _, tag := range tags {
+			tagText += fmt.Sprintf("| [%s]%s ", tcell.ColorBlue, tag.Attributes.Name["en"])
+		}
+		tagsView.
+			SetText(tagText).
+			SetTextColor(tcell.ColorBlue).
+			SetTextAlign(tview.AlignLeft).
+			SetDynamicColors(true)
+
+	} else {
+		tagsView.
+			SetText("Tags: None").
+			SetTextColor(tcell.ColorWhite).
+			SetTextAlign(tview.AlignLeft).
+			SetDynamicColors(true)
+	}
+	infoFlex.AddItem(title, 0, 1, false)
+	infoFlex.AddItem(status, 0, 1, false)
+	infoFlex.AddItem(year, 0, 1, false)
+	infoFlex.AddItem(tagsView, 0, 2, false)
+	infoFlex.AddItem(description, 0, 4, false)
+
+	popularContent.AddItem(imageFlex, 0, 4, false)
+	popularContent.AddItem(infoFlex, 0, 6, false)
 }
 
 func (p *HomePage) setInputSearchComponent() tview.Primitive {
@@ -166,7 +273,7 @@ func (p *HomePage) setTableHeaderManga(mangaList *tview.Table) {
 	mangaList.SetFixed(1, 0)
 }
 
-func (p *HomePage) getMangaData(mangaList *tview.Table, params models.MangaQueryParams) {
+func (p *HomePage) setMangaListData(mangaList *tview.Table, params models.MangaQueryParams) {
 	mangas, err := api.GetManga(params)
 
 	if err != nil {
@@ -175,10 +282,10 @@ func (p *HomePage) getMangaData(mangaList *tview.Table, params models.MangaQuery
 	}
 
 	for i, manga := range mangas {
-		titleCell := tview.NewTableCell(manga.Title).SetReference(&manga).SetMaxWidth(30)
+		titleCell := tview.NewTableCell(manga.Attributes.Title["en"]).SetReference(&manga).SetMaxWidth(30)
 		mangaList.SetCell(i+1, 0, titleCell)
-		mangaList.SetCell(i+1, 1, p.formatStatus(manga.Status))
-		mangaList.SetCell(i+1, 2, tview.NewTableCell(strconv.Itoa(manga.Year)))
+		mangaList.SetCell(i+1, 1, p.formatTableStatus(manga.Attributes.Status))
+		mangaList.SetCell(i+1, 2, tview.NewTableCell(strconv.Itoa(manga.Attributes.Year)))
 	}
 
 	mangaList.SetSelectedFunc(func(row, _ int) {
@@ -186,18 +293,54 @@ func (p *HomePage) getMangaData(mangaList *tview.Table, params models.MangaQuery
 			return // Skip header row
 		}
 		selectedManga := mangaList.GetCell(row, 0).GetReference().(*models.Manga)
-		log.Printf("Selected Manga: %s (ID: %s)", selectedManga.Title, selectedManga.ID)
+		log.Printf("Selected Manga: %s (ID: %s)", selectedManga.Attributes.Title["en"], selectedManga.ID)
 	})
 
 	mangaList.SetSelectable(true, false)
 }
 
-func (p *HomePage) formatStatus(status string) *tview.TableCell {
+func (p *HomePage) formatTextStatus(status string) string {
+	switch status {
+	case "ongoing":
+		return "Ongoing"
+	case "completed":
+		return "Completed"
+	case "hiatus":
+		return "Hiatus"
+	case "cancelled":
+		return "Cancelled"
+	default:
+		return status
+	}
+}
+func (p *HomePage) getColorStatus(status string) tcell.Color {
+	switch status {
+	case "ongoing":
+		return tcell.ColorGreen
+	case "completed":
+		return tcell.ColorOrange
+	case "hiatus":
+		return tcell.ColorYellow
+	case "cancelled":
+		return tcell.ColorRed
+	default:
+		return tcell.ColorWhite
+	}
+}
+
+func (p *HomePage) formatTextYear(year int) string {
+	if year == 0 {
+		return "Unknown"
+	}
+	return strconv.Itoa(year)
+}
+
+func (p *HomePage) formatTableStatus(status string) *tview.TableCell {
 	switch status {
 	case "ongoing":
 		return tview.NewTableCell("Ongoing").SetTextColor(tcell.ColorGreen)
 	case "completed":
-		return tview.NewTableCell("Completed").SetTextColor(tcell.ColorBlue)
+		return tview.NewTableCell("Completed").SetTextColor(tcell.ColorOrange)
 	case "hiatus":
 		return tview.NewTableCell("Hiatus").SetTextColor(tcell.ColorYellow)
 	case "cancelled":

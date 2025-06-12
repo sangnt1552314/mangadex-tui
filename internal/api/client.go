@@ -102,27 +102,20 @@ func GetManga(params models.MangaQueryParams) ([]models.Manga, error) {
 		return nil, fmt.Errorf("API error: %s", mangaList.Result)
 	}
 
-	var mangas []models.Manga
-	for _, item := range mangaList.Data {
-		manga := models.Manga{
-			ID:            item.ID,
-			Title:         item.Attributes.Title["en"],
-			Description:   item.Attributes.Description["en"],
-			Status:        item.Attributes.Status,
-			Year:          item.Attributes.Year,
-			Tags:          make([]models.Tag, len(item.Attributes.Tags)),
-			Relationships: item.Relationships,
-		}
-		mangas = append(mangas, manga)
-	}
-
-	if len(mangas) == 0 {
+	if len(mangaList.Data) == 0 {
 		return nil, fmt.Errorf("no manga found")
 	}
 
-	return mangas, nil
+	return mangaList.Data, nil
 }
 
+func GetMangaCover(mangaID string) (string, error) {
+	client := NewClient()
+
+	url := fmt.Sprintf("/manga/%s/cover", mangaID)
+}
+
+// getMangaApiUrl constructs the API URL for fetching manga based on the provided parameters.
 func getMangaApiUrl(params models.MangaQueryParams) string {
 	queryParams := fmt.Sprintf("?limit=%d", params.Limit)
 

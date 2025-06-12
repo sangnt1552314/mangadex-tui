@@ -61,13 +61,13 @@ func (p *AboutPage) setupMenu() tview.Primitive {
 
 	// Create buttons for each menu item
 	homeButton := tview.NewButton("⌂ Home")
-	homeButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	homeButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorGreen).Background(tcell.ColorBlack))
 	homeButton.SetSelectedFunc(func() {
 		p.app.SwitchToPage("home")
 	})
 
 	exitButton := tview.NewButton("⏻ Exit")
-	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorRed).Background(tcell.ColorBlack))
 	exitButton.SetSelectedFunc(func() {
 		p.app.Stop()
 	})

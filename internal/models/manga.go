@@ -15,16 +15,31 @@ type MangaQueryParams struct {
 }
 
 type Manga struct {
-	ID            string
-	Title         string
-	Description   string
-	Status        string
-	Year          int
-	Tags          []Tag
-	Relationships []struct {
-		ID   string `json:"id"`
-		Type string `json:"type"`
-	} `json:"relationships"`
+	ID         string `json:"id"`
+	Type       string `json:"type"`
+	Attributes struct {
+		Title                          map[string]string   `json:"title"`
+		AltTitles                      []map[string]string `json:"altTitles"`
+		Description                    map[string]string   `json:"description"`
+		IsLocked                       bool                `json:"isLocked"`
+		Links                          map[string]string   `json:"links"`
+		OriginalLanguage               string              `json:"originalLanguage"`
+		LastVolume                     string              `json:"lastVolume"`
+		LastChapter                    string              `json:"lastChapter"`
+		PublicationDemographic         string              `json:"publicationDemographic"`
+		Status                         string              `json:"status"`
+		Year                           int                 `json:"year"`
+		ContentRating                  string              `json:"contentRating"`
+		Tags                           []Tag               `json:"tags"`
+		State                          string              `json:"state"`
+		ChapterNumbersResetOnNewVolume bool                `json:"chapterNumbersResetOnNewVolume"`
+		CreatedAt                      string              `json:"createdAt"`
+		UpdatedAt                      string              `json:"updatedAt"`
+		Version                        int                 `json:"version"`
+		AvailableTranslatedLanguages   []string            `json:"availableTranslatedLanguages"`
+		LatestUploadedChapter          string              `json:"latestUploadedChapter"`
+	} `json:"attributes"`
+	Relationships []Relationship `json:"relationships"`
 }
 
 type Tag struct {
@@ -36,30 +51,22 @@ type Tag struct {
 		Group       string            `json:"group"`
 		Version     int               `json:"version"`
 	} `json:"attributes"`
+	Relationships []Relationship `json:"relationships"`
+}
+
+type Relationship struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
 }
 
 type MangaListResponse struct {
-	Result   string `json:"result"`
-	Response string `json:"response"`
-	Limit    int    `json:"limit"`
-	Offset   int    `json:"offset"`
-	Total    int    `json:"total"`
-	Data     []struct {
-		ID         string `json:"id"`
-		Type       string `json:"type"`
-		Attributes struct {
-			Title         map[string]string `json:"title"`
-			Description   map[string]string `json:"description"`
-			Status        string            `json:"status"`
-			Year          int               `json:"year"`
-			IsLocked      bool              `json:"isLocked"`
-			Links         map[string]string `json:"links"`
-			ContentRating string            `json:"contentRating"`
-			Tags          []Tag             `json:"tags"`
-		} `json:"attributes"`
-		Relationships []struct {
-			ID   string `json:"id"`
-			Type string `json:"type"`
-		} `json:"relationships"`
-	} `json:"data"`
+	Result   string  `json:"result"`
+	Response string  `json:"response"`
+	Limit    int     `json:"limit"`
+	Offset   int     `json:"offset"`
+	Total    int     `json:"total"`
+	Data     []Manga `json:"data"`
+}
+
+type CoverListResponse struct {
 }
