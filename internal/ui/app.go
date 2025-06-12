@@ -75,3 +75,7 @@ func (a *App) EnableMouse(enable bool) {
 func (a *App) SetInputCapture(fn func(event *tcell.EventKey) *tcell.EventKey) {
 	a.Application.SetInputCapture(fn)
 }
+
+func (a *App) SetRoot(root tview.Primitive, fullscreen bool) {
+	a.Application.SetRoot(root, fullscreen)
+}

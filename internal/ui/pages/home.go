@@ -2,7 +2,6 @@ package pages
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -11,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -173,8 +173,10 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	popularNavigationFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	popularNavigationFlex.SetBorder(false)
 	leftButton := tview.NewButton("◀ Previous")
+	viewButton := tview.NewButton("View Detail")
 	rightButton := tview.NewButton("Next ▶")
 	leftButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	viewButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorGreen).Background(tcell.ColorBlack))
 	rightButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
 	leftButton.SetSelectedFunc(func() {
 		if currentIndex > 0 {
@@ -188,7 +190,14 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 			p.buildPopularContent(popularContent, popularManga[currentIndex])
 		}
 	})
+	viewButton.SetSelectedFunc(func() {
+		if currentIndex < len(popularManga) {
+			selectedManga := popularManga[currentIndex]
+			p.showMangaDetailModal(&selectedManga)
+		}
+	})
 	popularNavigationFlex.AddItem(leftButton, 0, 1, false)
+	popularNavigationFlex.AddItem(viewButton, 0, 1, false)
 	popularNavigationFlex.AddItem(rightButton, 0, 1, false)
 
 	// Add popular manga to the content area
@@ -204,50 +213,10 @@ func (p *HomePage) buildPopularContent(popularContent *tview.Flex, manga models.
 	// Create a box for cover art placeholder
 	imageFlex := tview.NewImage()
 	// imageFlex.SetSize(30, 30)
-	coverList, err := api.GetMangaCover(manga.ID)
 
-	if err != nil {
-		log.Println("Error fetching cover for manga:", err)
-	}
-	//Get cover image URL
-	var coverURL string
-	if len(coverList.Data) > 0 {
-		coverURL = api.GetCoverURL(manga.ID, coverList.Data[0].Attributes.FileName, 256)
-
-		resp, err := http.Get(coverURL)
-		if err != nil {
-			log.Println("Error fetching cover image:", err)
-		} else {
-			defer resp.Body.Close()
-
-			imgData, err := io.ReadAll(resp.Body)
-			if err != nil {
-				log.Println("Error reading cover image data:", err)
-			}
-
-			base64Str := base64.StdEncoding.EncodeToString(imgData)
-
-			imgBytes, err := base64.StdEncoding.DecodeString(base64Str)
-			if err != nil {
-				log.Println("Error decoding base64 image data:", err)
-			}
-
-			contentType := http.DetectContentType(imgBytes)
-			var img image.Image
-
-			switch contentType {
-			case "image/jpeg":
-				img, err = jpeg.Decode(bytes.NewReader(imgBytes))
-			case "image/png":
-				img, err = png.Decode(bytes.NewReader(imgBytes))
-			}
-
-			if err != nil {
-				log.Printf("Error decoding image: %v", err)
-			}
-
-			imageFlex.SetImage(img)
-		}
+	// Get and set the image
+	if img := p.getMangaImage(manga.ID, 256); img != nil {
+		imageFlex.SetImage(img)
 	}
 
 	infoFlex := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -273,25 +242,10 @@ func (p *HomePage) buildPopularContent(popularContent *tview.Flex, manga models.
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
 	tags := manga.Attributes.Tags
-	tagsView := tview.NewTextView()
-	if len(tags) > 0 {
-		tagText := "Tags: "
-		for _, tag := range tags {
-			tagText += fmt.Sprintf("| [%s]%s ", tcell.ColorBlue, tag.Attributes.Name["en"])
-		}
-		tagsView.
-			SetText(tagText).
-			SetTextColor(tcell.ColorBlue).
-			SetTextAlign(tview.AlignLeft).
-			SetDynamicColors(true)
-
-	} else {
-		tagsView.
-			SetText("Tags: None").
-			SetTextColor(tcell.ColorWhite).
-			SetTextAlign(tview.AlignLeft).
-			SetDynamicColors(true)
-	}
+	tagsView := tview.NewTextView().
+		SetText(fmt.Sprintf("Tags: %s", p.formatTags(tags))).
+		SetTextAlign(tview.AlignLeft).
+		SetDynamicColors(true)
 	infoFlex.AddItem(title, 0, 1, false)
 	infoFlex.AddItem(status, 0, 1, false)
 	infoFlex.AddItem(year, 0, 1, false)
@@ -342,15 +296,127 @@ func (p *HomePage) setMangaListData(mangaList *tview.Table, params models.MangaQ
 		mangaList.SetCell(i+1, 2, tview.NewTableCell(strconv.Itoa(manga.Attributes.Year)))
 	}
 
-	mangaList.SetSelectedFunc(func(row, _ int) {
+	mangaList.SetSelectedFunc(func(row, column int) {
 		if row == 0 {
 			return // Skip header row
 		}
-		selectedManga := mangaList.GetCell(row, 0).GetReference().(*models.Manga)
-		log.Printf("Selected Manga: %s (ID: %s)", selectedManga.Attributes.Title["en"], selectedManga.ID)
+		// Get the cell at the selected row
+		cell := mangaList.GetCell(row, 0)
+		if cell == nil {
+			log.Printf("Error: Invalid cell at row %d", row)
+			return
+		}
+
+		// Get manga reference
+		ref := cell.GetReference()
+		if ref == nil {
+			log.Printf("Error: No manga reference at row %d", row)
+			return
+		}
+
+		selectedManga, ok := ref.(*models.Manga)
+		if !ok || selectedManga == nil {
+			log.Printf("Error: Invalid manga reference at row %d", row)
+			return
+		}
+
+		p.showMangaDetailModal(selectedManga)
 	})
 
 	mangaList.SetSelectable(true, false)
+}
+
+func (p *HomePage) showMangaDetailModal(manga *models.Manga) {
+	// Create content area
+	content := fmt.Sprintf(`Title: [orange]%s[-]
+		Status: [%s]%s[-]
+		Year: %s
+
+		Description: 
+		%s
+
+		Tags: %s`,
+		manga.Attributes.Title["en"],
+		p.getColorStatus(manga.Attributes.Status).String(),
+		p.formatTextStatus(manga.Attributes.Status),
+		p.formatTextYear(manga.Attributes.Year),
+		manga.Attributes.Description["en"],
+		p.formatTags(manga.Attributes.Tags))
+
+	// Create and configure modal
+	modal := tview.NewModal().
+		SetText(content).
+		SetBackgroundColor(tcell.ColorBlack).
+		AddButtons([]string{"Close", "View Detail"}).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			if buttonLabel == "Close" {
+				p.app.SetRoot(p.rootView, true)
+			} else if buttonLabel == "View Detail" {
+				// TODO: Implement chapter view
+				p.app.SetRoot(p.rootView, true)
+			}
+		})
+
+	// Show the modal page
+	p.app.SetRoot(modal, false)
+}
+
+func (p *HomePage) getMangaImage(mangaID string, size int) image.Image {
+	coverList, err := api.GetMangaCover(mangaID)
+	if err != nil {
+		log.Println("Error fetching cover for manga:", err)
+		return nil
+	}
+
+	if len(coverList.Data) == 0 {
+		return nil
+	}
+
+	coverURL := api.GetCoverURL(mangaID, coverList.Data[0].Attributes.FileName, size)
+	resp, err := http.Get(coverURL)
+	if err != nil {
+		log.Println("Error fetching cover image:", err)
+		return nil
+	}
+	defer resp.Body.Close()
+
+	imgData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error reading cover image data:", err)
+		return nil
+	}
+
+	contentType := http.DetectContentType(imgData)
+	var img image.Image
+
+	switch contentType {
+	case "image/jpeg":
+		img, err = jpeg.Decode(bytes.NewReader(imgData))
+	case "image/png":
+		img, err = png.Decode(bytes.NewReader(imgData))
+	default:
+		log.Printf("Unsupported image type: %s", contentType)
+		return nil
+	}
+
+	if err != nil {
+		log.Printf("Error decoding image: %v", err)
+		return nil
+	}
+
+	return img
+}
+
+func (p *HomePage) formatTags(tags []models.Tag) string {
+	if len(tags) == 0 {
+		return "None"
+	}
+
+	var tagNames []string
+	for _, tag := range tags {
+		tagNames = append(tagNames, fmt.Sprintf("[blue]%s[-]", tag.Attributes.Name["en"]))
+	}
+	return strings.Join(tagNames, " | ")
 }
 
 func (p *HomePage) formatTextStatus(status string) string {
