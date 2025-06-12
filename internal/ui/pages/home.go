@@ -21,15 +21,17 @@ import (
 )
 
 type HomePage struct {
-	app      interfaces.AppInterface
-	rootView *tview.Flex
+	app            interfaces.AppInterface
+	rootView       *tview.Flex
+	popularContent *tview.Flex
 }
 
 func NewHomePage(app interfaces.AppInterface) *HomePage {
 
 	return &HomePage{
-		app:      app,
-		rootView: tview.NewFlex(),
+		app:            app,
+		rootView:       tview.NewFlex(),
+		popularContent: tview.NewFlex(),
 	}
 }
 
@@ -166,8 +168,8 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	popularFlex.SetBorder(true).SetTitle("Popular").SetTitleAlign(tview.AlignLeft)
 
 	// Create a content area for popular manga
-	popularContent := tview.NewFlex().SetDirection(tview.FlexColumn)
-	p.buildPopularContent(popularContent, popularManga[currentIndex])
+	p.popularContent.SetDirection(tview.FlexColumn)
+	p.buildPopularContent(p.popularContent, popularManga[currentIndex])
 
 	// Create a navigation flex for popular manga
 	popularNavigationFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
@@ -181,13 +183,13 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	leftButton.SetSelectedFunc(func() {
 		if currentIndex > 0 {
 			currentIndex--
-			p.buildPopularContent(popularContent, popularManga[currentIndex])
+			p.buildPopularContent(p.popularContent, popularManga[currentIndex])
 		}
 	})
 	rightButton.SetSelectedFunc(func() {
 		if currentIndex < len(popularManga)-1 {
 			currentIndex++
-			p.buildPopularContent(popularContent, popularManga[currentIndex])
+			p.buildPopularContent(p.popularContent, popularManga[currentIndex])
 		}
 	})
 	viewButton.SetSelectedFunc(func() {
@@ -201,7 +203,7 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	popularNavigationFlex.AddItem(rightButton, 0, 1, false)
 
 	// Add popular manga to the content area
-	popularFlex.AddItem(popularContent, 0, 9, false)
+	popularFlex.AddItem(p.popularContent, 0, 9, false)
 	popularFlex.AddItem(popularNavigationFlex, 0, 1, false)
 
 	return popularFlex
@@ -290,7 +292,8 @@ func (p *HomePage) setMangaListData(mangaList *tview.Table, params models.MangaQ
 	}
 
 	for i, manga := range mangas {
-		titleCell := tview.NewTableCell(manga.Attributes.Title["en"]).SetReference(&manga).SetMaxWidth(30)
+		mangaCopy := manga
+		titleCell := tview.NewTableCell(manga.Attributes.Title["en"]).SetReference(&mangaCopy).SetMaxWidth(30)
 		mangaList.SetCell(i+1, 0, titleCell)
 		mangaList.SetCell(i+1, 1, p.formatTableStatus(manga.Attributes.Status))
 		mangaList.SetCell(i+1, 2, tview.NewTableCell(strconv.Itoa(manga.Attributes.Year)))
@@ -320,7 +323,8 @@ func (p *HomePage) setMangaListData(mangaList *tview.Table, params models.MangaQ
 			return
 		}
 
-		p.showMangaDetailModal(selectedManga)
+		// p.showMangaDetailModal(selectedManga)
+		p.buildPopularContent(p.popularContent, *selectedManga)
 	})
 
 	mangaList.SetSelectable(true, false)
@@ -340,7 +344,7 @@ func (p *HomePage) showMangaDetailModal(manga *models.Manga) {
 		p.getColorStatus(manga.Attributes.Status).String(),
 		p.formatTextStatus(manga.Attributes.Status),
 		p.formatTextYear(manga.Attributes.Year),
-		manga.Attributes.Description["en"],
+		p.shortenDescription(manga.Attributes.Description["en"], 300),
 		p.formatTags(manga.Attributes.Tags))
 
 	// Create and configure modal
@@ -405,6 +409,28 @@ func (p *HomePage) getMangaImage(mangaID string, size int) image.Image {
 	}
 
 	return img
+}
+
+func (p *HomePage) shortenDescription(desc string, maxLength int) string {
+	if desc == "" {
+		return "No description available"
+	}
+
+	// Clean up newlines and extra spaces
+	desc = strings.Join(strings.Fields(desc), " ")
+
+	if len(desc) <= maxLength {
+		return desc
+	}
+
+	// Find the last space before maxLength
+	lastSpace := strings.LastIndex(desc[:maxLength], " ")
+	if lastSpace == -1 {
+		lastSpace = maxLength
+	}
+
+	// Truncate and add ellipsis
+	return desc[:lastSpace] + "..."
 }
 
 func (p *HomePage) formatTags(tags []models.Tag) string {
