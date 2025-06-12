@@ -68,5 +68,26 @@ type MangaListResponse struct {
 	Data     []Manga `json:"data"`
 }
 
+type CoverArt struct {
+	ID         string `json:"id"`
+	Type       string `json:"type"`
+	Attributes struct {
+		Description string `json:"description"`
+		Volume      string `json:"volume"`
+		FileName    string `json:"fileName"`
+		Locale      string `json:"locale"`
+		CreatedAt   string `json:"createdAt"`
+		UpdatedAt   string `json:"updatedAt"`
+		Version     int    `json:"version"`
+	} `json:"attributes"`
+	Relationships []Relationship `json:"relationships"`
+}
+
 type CoverListResponse struct {
+	Result   string     `json:"result"`
+	Response string     `json:"response"`
+	Data     []CoverArt `json:"data"`
+	Limit    int        `json:"limit"`
+	Offset   int        `json:"offset"`
+	Total    int        `json:"total"`
 }

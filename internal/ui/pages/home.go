@@ -1,8 +1,15 @@
 package pages
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"image/png"
+	"io"
 	"log"
+	"net/http"
 	"strconv"
 
 	"github.com/gdamore/tcell/v2"
@@ -194,7 +201,54 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 func (p *HomePage) buildPopularContent(popularContent *tview.Flex, manga models.Manga) {
 	popularContent.Clear()
 
+	// Create a box for cover art placeholder
 	imageFlex := tview.NewImage()
+	// imageFlex.SetSize(30, 30)
+	coverList, err := api.GetMangaCover(manga.ID)
+
+	if err != nil {
+		log.Println("Error fetching cover for manga:", err)
+	}
+	//Get cover image URL
+	var coverURL string
+	if len(coverList.Data) > 0 {
+		coverURL = api.GetCoverURL(manga.ID, coverList.Data[0].Attributes.FileName, 256)
+
+		resp, err := http.Get(coverURL)
+		if err != nil {
+			log.Println("Error fetching cover image:", err)
+		} else {
+			defer resp.Body.Close()
+
+			imgData, err := io.ReadAll(resp.Body)
+			if err != nil {
+				log.Println("Error reading cover image data:", err)
+			}
+
+			base64Str := base64.StdEncoding.EncodeToString(imgData)
+
+			imgBytes, err := base64.StdEncoding.DecodeString(base64Str)
+			if err != nil {
+				log.Println("Error decoding base64 image data:", err)
+			}
+
+			contentType := http.DetectContentType(imgBytes)
+			var img image.Image
+
+			switch contentType {
+			case "image/jpeg":
+				img, err = jpeg.Decode(bytes.NewReader(imgBytes))
+			case "image/png":
+				img, err = png.Decode(bytes.NewReader(imgBytes))
+			}
+
+			if err != nil {
+				log.Printf("Error decoding image: %v", err)
+			}
+
+			imageFlex.SetImage(img)
+		}
+	}
 
 	infoFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	infoFlex.SetBorder(true).SetTitle("Information").SetTitleAlign(tview.AlignLeft)
@@ -244,8 +298,8 @@ func (p *HomePage) buildPopularContent(popularContent *tview.Flex, manga models.
 	infoFlex.AddItem(tagsView, 0, 2, false)
 	infoFlex.AddItem(description, 0, 4, false)
 
-	popularContent.AddItem(imageFlex, 0, 4, false)
-	popularContent.AddItem(infoFlex, 0, 6, false)
+	popularContent.AddItem(imageFlex, 0, 3, false)
+	popularContent.AddItem(infoFlex, 0, 7, false)
 }
 
 func (p *HomePage) setInputSearchComponent() tview.Primitive {

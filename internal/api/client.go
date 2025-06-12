@@ -10,7 +10,11 @@ import (
 )
 
 const (
-	baseURL = "https://api.mangadex.org"
+	baseURL           = "https://api.mangadex.org"
+	coverBaseURL      = "https://uploads.mangadex.org/covers"
+	ThumbnailOriginal = 0   // Original size
+	Thumbnail256      = 256 // 256px width
+	Thumbnail512      = 512 // 512px width
 )
 
 type HTTPError struct {
@@ -109,13 +113,42 @@ func GetManga(params models.MangaQueryParams) ([]models.Manga, error) {
 	return mangaList.Data, nil
 }
 
-func GetMangaCover(mangaID string) (string, error) {
+func GetMangaCover(mangaID string) (*models.CoverListResponse, error) {
 	client := NewClient()
 
-	url := fmt.Sprintf("/manga/%s/cover", mangaID)
+	url := fmt.Sprintf("/cover?manga[]=%s", mangaID)
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var coverList models.CoverListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&coverList); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if coverList.Result != "ok" {
+		return nil, fmt.Errorf("API error: %s", coverList.Result)
+	}
+
+	return &coverList, nil
 }
 
-// getMangaApiUrl constructs the API URL for fetching manga based on the provided parameters.
+func GetCoverURL(mangaID string, filename string, size int) string {
+	url := fmt.Sprintf("%s/%s/%s", coverBaseURL, mangaID, filename)
+
+	switch size {
+	case Thumbnail256:
+		return url + ".256.jpg"
+	case Thumbnail512:
+		return url + ".512.jpg"
+	default:
+		return url
+	}
+}
+
 func getMangaApiUrl(params models.MangaQueryParams) string {
 	queryParams := fmt.Sprintf("?limit=%d", params.Limit)
 
