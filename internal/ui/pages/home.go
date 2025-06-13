@@ -15,17 +15,15 @@ import (
 )
 
 type HomePage struct {
-	app            interfaces.AppInterface
-	rootView       *tview.Flex
-	popularContent *tview.Flex
+	app      interfaces.AppInterface
+	rootView *tview.Flex
 }
 
 func NewHomePage(app interfaces.AppInterface) *HomePage {
 
 	return &HomePage{
-		app:            app,
-		rootView:       tview.NewFlex(),
-		popularContent: tview.NewFlex(),
+		app:      app,
+		rootView: tview.NewFlex(),
 	}
 }
 
@@ -162,8 +160,9 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	popularFlex.SetBorder(true).SetTitle("Popular").SetTitleAlign(tview.AlignLeft)
 
 	// Create a content area for popular manga
-	p.popularContent.SetDirection(tview.FlexColumn)
-	p.buildPopularContent(p.popularContent, popularManga[currentIndex])
+	popularContent := tview.NewFlex().SetDirection(tview.FlexRow)
+	popularContent.SetDirection(tview.FlexColumn)
+	p.buildPopularContent(popularContent, popularManga[currentIndex])
 
 	// Create a navigation flex for popular manga
 	popularNavigationFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
@@ -177,13 +176,13 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	leftButton.SetSelectedFunc(func() {
 		if currentIndex > 0 {
 			currentIndex--
-			p.buildPopularContent(p.popularContent, popularManga[currentIndex])
+			p.buildPopularContent(popularContent, popularManga[currentIndex])
 		}
 	})
 	rightButton.SetSelectedFunc(func() {
 		if currentIndex < len(popularManga)-1 {
 			currentIndex++
-			p.buildPopularContent(p.popularContent, popularManga[currentIndex])
+			p.buildPopularContent(popularContent, popularManga[currentIndex])
 		}
 	})
 	viewButton.SetSelectedFunc(func() {
@@ -197,7 +196,7 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	popularNavigationFlex.AddItem(rightButton, 0, 1, false)
 
 	// Add popular manga to the content area
-	popularFlex.AddItem(p.popularContent, 0, 9, false)
+	popularFlex.AddItem(popularContent, 0, 9, false)
 	popularFlex.AddItem(popularNavigationFlex, 0, 1, false)
 
 	return popularFlex
