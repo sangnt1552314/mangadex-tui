@@ -187,8 +187,7 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	})
 	viewButton.SetSelectedFunc(func() {
 		if currentIndex < len(popularManga) {
-			selectedManga := popularManga[currentIndex]
-			p.showMangaDetailModal(&selectedManga)
+			// selectedManga := popularManga[currentIndex]
 		}
 	})
 	popularNavigationFlex.AddItem(leftButton, 0, 1, false)
@@ -347,8 +346,7 @@ func (p *HomePage) showMangaDetailModal(manga *models.Manga) {
 			if buttonLabel == "Close" {
 				p.app.SetRoot(p.rootView, true)
 			} else if buttonLabel == "View Detail" {
-				// TODO: Implement chapter view
-				p.app.SetRoot(p.rootView, true)
+				p.app.SwitchToPage("detail")
 			}
 		})
 

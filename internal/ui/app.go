@@ -51,6 +51,7 @@ func (a *App) setupPages() {
 
 	a.RegisterPage(pages.NewHomePage(a))
 	a.RegisterPage(pages.NewAboutPage(a))
+	a.RegisterPage(pages.NewDetailPage(a))
 
 	a.SwitchToPage("home")
 }
