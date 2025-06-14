@@ -67,7 +67,7 @@ func (p *HomePage) Init(app interfaces.AppInterface) {
 func (p *HomePage) setupMenu() tview.Primitive {
 	// Replace List with Flex set to horizontal direction
 	menuFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
-	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true).SetTitle("Menu").SetTitleAlign(tview.AlignLeft)
+	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true).SetTitle("Options").SetTitleAlign(tview.AlignLeft)
 
 	exitButton := tview.NewButton("⏻ Exit")
 	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorRed).Background(tcell.ColorBlack))

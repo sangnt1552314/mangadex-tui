@@ -47,7 +47,7 @@ func (p *AboutPage) Init(app interfaces.AppInterface) {
 
 	// Layout - Content
 	content := p.setupContent()
-	p.rootView.AddItem(content, 0, 8, true)
+	p.rootView.AddItem(content, 0, 9, true)
 
 	// Layout - Menu
 	menu := p.setupMenu()
@@ -57,7 +57,7 @@ func (p *AboutPage) Init(app interfaces.AppInterface) {
 func (p *AboutPage) setupMenu() tview.Primitive {
 	// Replace List with Flex set to horizontal direction
 	menuFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
-	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true)
+	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true).SetTitle("Options").SetTitleAlign(tview.AlignLeft)
 
 	// Create buttons for each menu item
 	homeButton := tview.NewButton("⌂ Home")
