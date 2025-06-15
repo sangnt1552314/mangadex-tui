@@ -10,7 +10,8 @@ import (
 
 type App struct {
 	*tview.Application
-	Pages *tview.Pages
+	Pages       *tview.Pages
+	pageObjects map[string]interfaces.Page
 }
 
 var _ interfaces.AppInterface = (*App)(nil)
@@ -19,6 +20,7 @@ func NewApp() *App {
 	app := &App{
 		Application: tview.NewApplication(),
 		Pages:       tview.NewPages(),
+		pageObjects: make(map[string]interfaces.Page),
 	}
 
 	app.setupBindings()
@@ -60,6 +62,10 @@ func (a *App) AddPage(name string, page tview.Primitive, visible bool) {
 	a.Pages.AddPage(name, page, true, visible)
 }
 
+func (a *App) GetPageObject(name string) interfaces.Page {
+	return a.pageObjects[name]
+}
+
 func (a *App) SwitchToPage(name string) {
 	a.Pages.SwitchToPage(name)
 }
@@ -67,6 +73,7 @@ func (a *App) SwitchToPage(name string) {
 func (a *App) RegisterPage(page interfaces.Page) {
 	page.Init(a)
 	a.AddPage(page.Name(), page.View(), page.Name() == "home")
+	a.pageObjects[page.Name()] = page
 }
 
 func (a *App) EnableMouse(enable bool) {
@@ -79,4 +86,8 @@ func (a *App) SetInputCapture(fn func(event *tcell.EventKey) *tcell.EventKey) {
 
 func (a *App) SetRoot(root tview.Primitive, fullscreen bool) {
 	a.Application.SetRoot(root, fullscreen)
+}
+
+func (a *App) RestorePages() {
+	a.Application.SetRoot(a.Pages, true)
 }

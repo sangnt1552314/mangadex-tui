@@ -187,7 +187,10 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	})
 	viewButton.SetSelectedFunc(func() {
 		if currentIndex < len(popularManga) {
-			// selectedManga := popularManga[currentIndex]
+			selectedManga := &popularManga[currentIndex]
+			detailPage := p.app.GetPageObject("detail").(*DetailPage)
+			detailPage.SetManga(selectedManga)
+			p.app.SwitchToPage("detail")
 		}
 	})
 	popularNavigationFlex.AddItem(leftButton, 0, 1, false)
@@ -343,10 +346,15 @@ func (p *HomePage) showMangaDetailModal(manga *models.Manga) {
 		SetBackgroundColor(tcell.ColorBlack).
 		AddButtons([]string{"Close", "View Detail"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			log.Println("Modal button pressed:", buttonLabel)
 			if buttonLabel == "Close" {
 				p.app.SetRoot(p.rootView, true)
 			} else if buttonLabel == "View Detail" {
+				detailPage := p.app.GetPageObject("detail").(*DetailPage)
+				detailPage.SetManga(manga)
+				p.app.RestorePages()
 				p.app.SwitchToPage("detail")
+				log.Println("Modal: Switching to detail page for manga ID:", manga.ID)
 			}
 		})
 

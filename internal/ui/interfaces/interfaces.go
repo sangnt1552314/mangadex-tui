@@ -9,10 +9,12 @@ import (
 type AppInterface interface {
 	SwitchToPage(name string)
 	AddPage(name string, page tview.Primitive, visible bool)
+	GetPageObject(name string) Page
 	Stop()
 	EnableMouse(enable bool)
 	SetInputCapture(fn func(event *tcell.EventKey) *tcell.EventKey)
 	SetRoot(root tview.Primitive, fullscreen bool)
+	RestorePages()
 }
 
 // Page defines what the app needs from pages
