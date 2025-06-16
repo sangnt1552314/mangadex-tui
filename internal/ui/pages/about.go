@@ -12,7 +12,6 @@ type AboutPage struct {
 }
 
 func NewAboutPage(app interfaces.AppInterface) *AboutPage {
-
 	return &AboutPage{
 		app:      app,
 		rootView: tview.NewFlex(),
@@ -55,15 +54,19 @@ func (p *AboutPage) Init(app interfaces.AppInterface) {
 }
 
 func (p *AboutPage) setupMenu() tview.Primitive {
-	// Replace List with Flex set to horizontal direction
 	menuFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true).SetTitle("Options").SetTitleAlign(tview.AlignLeft)
 
-	// Create buttons for each menu item
 	homeButton := tview.NewButton("⌂ Home")
-	homeButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorGreen).Background(tcell.ColorBlack))
+	homeButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorDodgerBlue).Background(tcell.ColorBlack))
 	homeButton.SetSelectedFunc(func() {
 		p.app.SwitchToPage("home")
+	})
+
+	searchButton := tview.NewButton("🔍 Search")
+	searchButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorPurple).Background(tcell.ColorBlack))
+	searchButton.SetSelectedFunc(func() {
+		p.app.SwitchToPage("search")
 	})
 
 	exitButton := tview.NewButton("⏻ Exit")
@@ -74,6 +77,7 @@ func (p *AboutPage) setupMenu() tview.Primitive {
 
 	// Add buttons to the flex container with equal proportion
 	menuFlex.AddItem(homeButton, 9, 1, false)
+	menuFlex.AddItem(searchButton, 9, 1, false)
 	menuFlex.AddItem(exitButton, 9, 1, false)
 
 	return menuFlex

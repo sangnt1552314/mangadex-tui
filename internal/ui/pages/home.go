@@ -65,14 +65,13 @@ func (p *HomePage) Init(app interfaces.AppInterface) {
 }
 
 func (p *HomePage) setupMenu() tview.Primitive {
-	// Replace List with Flex set to horizontal direction
 	menuFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true).SetTitle("Options").SetTitleAlign(tview.AlignLeft)
 
-	exitButton := tview.NewButton("⏻ Exit")
-	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorRed).Background(tcell.ColorBlack))
-	exitButton.SetSelectedFunc(func() {
-		p.app.Stop()
+	searchButton := tview.NewButton("🔍 Search")
+	searchButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorPurple).Background(tcell.ColorBlack))
+	searchButton.SetSelectedFunc(func() {
+		p.app.SwitchToPage("search")
 	})
 
 	aboutButton := tview.NewButton("ℹ About")
@@ -81,7 +80,14 @@ func (p *HomePage) setupMenu() tview.Primitive {
 		p.app.SwitchToPage("about")
 	})
 
+	exitButton := tview.NewButton("⏻ Exit")
+	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorRed).Background(tcell.ColorBlack))
+	exitButton.SetSelectedFunc(func() {
+		p.app.Stop()
+	})
+
 	// Add buttons to the flex container with equal proportion
+	menuFlex.AddItem(searchButton, 9, 1, false)
 	menuFlex.AddItem(aboutButton, 9, 1, false)
 	menuFlex.AddItem(exitButton, 9, 1, false)
 
@@ -91,9 +97,6 @@ func (p *HomePage) setupMenu() tview.Primitive {
 func (p *HomePage) setupMainContent() tview.Primitive {
 	mainContent := tview.NewFlex().SetDirection(tview.FlexRow)
 	mainContent.SetBorder(false).SetTitleAlign(tview.AlignLeft)
-
-	// Search Component
-	// searchBox := p.setInputSearchComponent()
 
 	// Popular Flex
 	popularFlex := p.setupPoplarFlex(tview.NewFlex().SetDirection(tview.FlexRow))
@@ -134,7 +137,6 @@ func (p *HomePage) setupMainContent() tview.Primitive {
 	latestFlex.AddItem(latestMangaList, 0, 1, false)
 
 	//Setup Components
-	// mainContent.AddItem(searchBox, 0, 1, false)
 	mainContent.AddItem(popularFlex, 0, 6, false)
 	mainContent.AddItem(featureLatestFlex, 0, 4, false)
 
@@ -251,15 +253,6 @@ func (p *HomePage) buildPopularContent(popularContent *tview.Flex, manga models.
 
 	popularContent.AddItem(imageFlex, 0, 3, false)
 	popularContent.AddItem(infoFlex, 0, 7, false)
-}
-
-func (p *HomePage) setInputSearchComponent() tview.Primitive {
-	search := tview.NewInputField()
-	search.SetTitle("Search").SetTitleAlign(tview.AlignLeft)
-	search.SetBorder(true)
-	search.SetFieldBackgroundColor(tcell.ColorNone).SetFieldTextColor(tcell.ColorWhite)
-
-	return search
 }
 
 func (p *HomePage) setTableHeaderManga(mangaList *tview.Table) {

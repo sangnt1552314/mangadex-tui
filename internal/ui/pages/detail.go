@@ -15,10 +15,6 @@ type DetailPage struct {
 	manga    *models.Manga
 }
 
-type DataReceiver interface {
-	SetData(data interface{})
-}
-
 func NewDetailPage(app interfaces.AppInterface) *DetailPage {
 	return &DetailPage{
 		app:      app,
@@ -78,15 +74,15 @@ func (p *DetailPage) setupMenu() tview.Primitive {
 	menuFlex.SetBackgroundColor(tcell.ColorBlack).SetBorder(true).SetTitle("Options").SetTitleAlign(tview.AlignLeft)
 
 	homeButton := tview.NewButton("⌂ Home")
-	homeButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorBlue).Background(tcell.ColorBlack))
+	homeButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorDodgerBlue).Background(tcell.ColorBlack))
 	homeButton.SetSelectedFunc(func() {
 		p.app.SwitchToPage("home")
 	})
 
-	exitButton := tview.NewButton("⏻ Exit")
-	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorRed).Background(tcell.ColorBlack))
-	exitButton.SetSelectedFunc(func() {
-		p.app.Stop()
+	searchButton := tview.NewButton("🔍 Search")
+	searchButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorPurple).Background(tcell.ColorBlack))
+	searchButton.SetSelectedFunc(func() {
+		p.app.SwitchToPage("search")
 	})
 
 	aboutButton := tview.NewButton("ℹ About")
@@ -95,8 +91,15 @@ func (p *DetailPage) setupMenu() tview.Primitive {
 		p.app.SwitchToPage("about")
 	})
 
+	exitButton := tview.NewButton("⏻ Exit")
+	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorRed).Background(tcell.ColorBlack))
+	exitButton.SetSelectedFunc(func() {
+		p.app.Stop()
+	})
+
 	// Add buttons to the flex container with equal proportion
 	menuFlex.AddItem(homeButton, 9, 1, false)
+	menuFlex.AddItem(searchButton, 9, 1, false)
 	menuFlex.AddItem(aboutButton, 9, 1, false)
 	menuFlex.AddItem(exitButton, 9, 1, false)
 
@@ -121,7 +124,8 @@ func (p *DetailPage) setupMainContent() tview.Primitive {
 	mangaDataFlex.SetBorder(false)
 
 	topMangaDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
-	// p.setupTopMangaDataFlex(topMangaDataFlex)
+	p.setupTopMangaDataFlex(topMangaDataFlex)
+
 	bottomMangaDataFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 
 	categoryDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -138,4 +142,8 @@ func (p *DetailPage) setupMainContent() tview.Primitive {
 	mainContent.AddItem(mangaDataFlex, 0, 3, false)
 
 	return mainContent
+}
+
+func (p *DetailPage) setupTopMangaDataFlex(flex *tview.Flex) {
+
 }
