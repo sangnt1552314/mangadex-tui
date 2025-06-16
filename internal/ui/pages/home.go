@@ -214,14 +214,15 @@ func (p *HomePage) buildPopularContent(popularContent *tview.Flex, manga models.
 	// imageFlex.SetSize(30, 30)
 
 	// Get and set the image
-	if img := services.GetMangaImage(manga.ID, 256); img != nil {
+	if img := services.GetMangaImage(manga.ID, 256, true); img != nil {
 		imageFlex.SetImage(img)
 	}
 
 	infoFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	infoFlex.SetBorder(true).SetTitle("Information").SetTitleAlign(tview.AlignLeft)
+
 	title := tview.NewTextView().
-		SetText(fmt.Sprintf("Title: %s", manga.Attributes.Title["en"])).
+		SetText(fmt.Sprintf("Title: %s", p.getMangaTitle(manga))).
 		SetTextColor(tcell.ColorOrange).
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
@@ -281,7 +282,7 @@ func (p *HomePage) setMangaListData(mangaList *tview.Table, params models.MangaQ
 
 	for i, manga := range mangas {
 		mangaCopy := manga
-		titleCell := tview.NewTableCell(manga.Attributes.Title["en"]).SetReference(&mangaCopy).SetMaxWidth(30)
+		titleCell := tview.NewTableCell(p.getMangaTitle(manga)).SetReference(&mangaCopy).SetMaxWidth(30)
 		mangaList.SetCell(i+1, 0, titleCell)
 		mangaList.SetCell(i+1, 1, p.formatTableStatus(manga.Attributes.Status))
 		mangaList.SetCell(i+1, 2, tview.NewTableCell(strconv.Itoa(manga.Attributes.Year)))
@@ -368,4 +369,31 @@ func (p *HomePage) formatTableStatus(status string) *tview.TableCell {
 	default:
 		return tview.NewTableCell(status).SetTextColor(tcell.ColorWhite)
 	}
+}
+
+func (p *HomePage) getMangaTitle(manga models.Manga) string {
+	title := manga.Attributes.Title["en"]
+
+	var altTitle string
+	if len(manga.Attributes.AltTitles) > 0 {
+		for _, title := range manga.Attributes.AltTitles {
+			if engTitle, ok := title["en"]; ok {
+				altTitle = engTitle
+				break
+			}
+		}
+
+		if altTitle == "" && len(manga.Attributes.AltTitles) > 0 {
+			for _, val := range manga.Attributes.AltTitles[0] {
+				altTitle = val
+				break
+			}
+		}
+	}
+
+	if title == "" && altTitle != "" {
+		title = altTitle
+	}
+
+	return title
 }

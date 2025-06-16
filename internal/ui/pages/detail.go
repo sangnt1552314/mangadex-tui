@@ -1,6 +1,8 @@
 package pages
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 
@@ -116,34 +118,112 @@ func (p *DetailPage) setupMainContent() tview.Primitive {
 	mainContent.SetBorder(true)
 
 	imageFlex := tview.NewImage()
-	if img := services.GetMangaImage(p.manga.ID, 512); img != nil {
+	if img := services.GetMangaImage(p.manga.ID, 512, true); img != nil {
 		imageFlex.SetImage(img)
 	}
 
 	mangaDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	mangaDataFlex.SetBorder(false)
 
-	topMangaDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	topMangaDataFlex := tview.NewFlex()
 	p.setupTopMangaDataFlex(topMangaDataFlex)
 
 	bottomMangaDataFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	bottomMangaDataFlex.SetBorder(false)
 
 	categoryDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	categoryDataFlex.SetBorder(true).SetTitle("Categories").SetTitleAlign(tview.AlignLeft)
+
 	chapterDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	chapterDataFlex.SetBorder(true).SetTitle("Chapters").SetTitleAlign(tview.AlignLeft)
 
 	bottomMangaDataFlex.AddItem(categoryDataFlex, 0, 1, false)
 	bottomMangaDataFlex.AddItem(chapterDataFlex, 0, 1, false)
 
-	mangaDataFlex.AddItem(topMangaDataFlex, 0, 1, false)
-	mangaDataFlex.AddItem(bottomMangaDataFlex, 0, 1, false)
+	mangaDataFlex.AddItem(topMangaDataFlex, 0, 4, false)
+	mangaDataFlex.AddItem(bottomMangaDataFlex, 0, 6, false)
 
-	mainContent.AddItem(imageFlex, 0, 2, false)
-	mainContent.AddItem(mangaDataFlex, 0, 3, false)
+	mainContent.AddItem(imageFlex, 0, 3, false)
+	mainContent.AddItem(mangaDataFlex, 0, 7, false)
 
 	return mainContent
 }
 
 func (p *DetailPage) setupTopMangaDataFlex(flex *tview.Flex) {
+	flex.SetDirection(tview.FlexColumn)
+	flex.SetBorder(false)
 
+	leftFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	leftFlex.SetBorder(true).SetTitle("Manga Info").SetTitleAlign(tview.AlignLeft)
+	rightFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	rightFlex.SetBorder(true).SetTitle("Description").SetTitleAlign(tview.AlignLeft)
+
+	// Main Title and Alternative Title
+	mainTitle := tview.NewTextView().
+		SetText(p.manga.Attributes.Title["en"]).
+		SetTextColor(tcell.ColorOrange)
+
+	var altTitle string
+	if len(p.manga.Attributes.AltTitles) > 0 {
+		for _, title := range p.manga.Attributes.AltTitles {
+			if engTitle, ok := title["en"]; ok {
+				altTitle = engTitle
+				break
+			}
+		}
+
+		if altTitle == "" && len(p.manga.Attributes.AltTitles) > 0 {
+			for _, val := range p.manga.Attributes.AltTitles[0] {
+				altTitle = val
+				break
+			}
+		}
+	}
+
+	altTitleView := tview.NewTextView().
+		SetText(altTitle).
+		SetTextColor(tcell.ColorLightGrey)
+
+	// Year and Status
+	yearText := tview.NewTextView().
+		SetText(fmt.Sprintf("Year: %s", services.FormatTextYear(p.manga.Attributes.Year)))
+
+	status := p.manga.Attributes.Status
+	statusColor := services.GetColorStatus(status)
+	statusText := tview.NewTextView().
+		SetText(fmt.Sprintf("Status: [%s]%s[-]",
+			statusColor.TrueColor(),
+			services.FormatTextStatus(status)))
+	statusText.SetDynamicColors(true)
+
+	// Tags
+	// tagsText := tview.NewTextView().
+	// 	SetText(fmt.Sprintf("Tags: %s", services.FormatTags(p.manga.Attributes.Tags)))
+	// tagsText.SetDynamicColors(true)
+
+	// Description
+	var description string
+	if desc, ok := p.manga.Attributes.Description["en"]; ok {
+		description = desc
+	} else if len(p.manga.Attributes.Description) > 0 {
+		// Get first description in any language
+		for _, desc := range p.manga.Attributes.Description {
+			description = desc
+			break
+		}
+	}
+
+	descText := tview.NewTextView().
+		SetText(description).
+		SetWrap(true).
+		SetDynamicColors(true)
+
+	leftFlex.AddItem(mainTitle, 0, 1, false)
+	leftFlex.AddItem(altTitleView, 0, 1, false)
+	leftFlex.AddItem(yearText, 0, 1, false)
+	leftFlex.AddItem(statusText, 0, 1, false)
+
+	rightFlex.AddItem(descText, 0, 1, false)
+	flex.AddItem(leftFlex, 0, 1, false)
+	flex.AddItem(rightFlex, 0, 2, false)
 }

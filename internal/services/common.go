@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
@@ -88,7 +89,7 @@ func FormatTextStatus(status string) string {
 	}
 }
 
-func GetMangaImage(mangaID string, size int) image.Image {
+func GetMangaImage(mangaID string, size int, isRandomImage bool) image.Image {
 	coverList, err := api.GetMangaCover(mangaID)
 	if err != nil {
 		log.Println("Error fetching cover for manga:", err)
@@ -99,7 +100,14 @@ func GetMangaImage(mangaID string, size int) image.Image {
 		return nil
 	}
 
-	coverURL := api.GetCoverURL(mangaID, coverList.Data[0].Attributes.FileName, size)
+	var randomIndex int
+	if isRandomImage && len(coverList.Data) > 0 {
+		randomIndex = rand.Intn(len(coverList.Data))
+	} else {
+		randomIndex = 0
+	}
+
+	coverURL := api.GetCoverURL(mangaID, coverList.Data[randomIndex].Attributes.FileName, size)
 	resp, err := http.Get(coverURL)
 	if err != nil {
 		log.Println("Error fetching cover image:", err)
@@ -112,10 +120,9 @@ func GetMangaImage(mangaID string, size int) image.Image {
 		log.Println("Error reading cover image data:", err)
 		return nil
 	}
-
 	contentType := http.DetectContentType(imgData)
-	var img image.Image
 
+	var img image.Image
 	switch contentType {
 	case "image/jpeg":
 		img, err = jpeg.Decode(bytes.NewReader(imgData))
