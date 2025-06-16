@@ -3,7 +3,9 @@ package pages
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+
 	"github.com/sangnt1552314/mangadex-tui/internal/models"
+	"github.com/sangnt1552314/mangadex-tui/internal/services"
 	"github.com/sangnt1552314/mangadex-tui/internal/ui/interfaces"
 )
 
@@ -46,6 +48,9 @@ func (p *DetailPage) Init(app interfaces.AppInterface) {
 		switch event.Key() {
 		case tcell.KeyCtrlC:
 			app.Stop()
+			return nil
+		case tcell.KeyCtrlH:
+			app.SwitchToPage("home")
 			return nil
 		}
 		return event
@@ -104,8 +109,33 @@ func (p *DetailPage) setupMainContent() tview.Primitive {
 		return noMangaText
 	}
 
-	mainContent := tview.NewFlex().SetDirection(tview.FlexRow)
-	mainContent.SetBorder(true).SetTitle(p.manga.Attributes.Title["en"]).SetTitleAlign(tview.AlignLeft)
+	mainContent := tview.NewFlex().SetDirection(tview.FlexColumn)
+	mainContent.SetBorder(true)
+
+	imageFlex := tview.NewImage()
+	if img := services.GetMangaImage(p.manga.ID, 512); img != nil {
+		imageFlex.SetImage(img)
+	}
+
+	mangaDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	mangaDataFlex.SetBorder(false)
+
+	topMangaDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	// p.setupTopMangaDataFlex(topMangaDataFlex)
+	bottomMangaDataFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+
+	categoryDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	chapterDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	chapterDataFlex.SetBorder(true).SetTitle("Chapters").SetTitleAlign(tview.AlignLeft)
+
+	bottomMangaDataFlex.AddItem(categoryDataFlex, 0, 1, false)
+	bottomMangaDataFlex.AddItem(chapterDataFlex, 0, 1, false)
+
+	mangaDataFlex.AddItem(topMangaDataFlex, 0, 1, false)
+	mangaDataFlex.AddItem(bottomMangaDataFlex, 0, 1, false)
+
+	mainContent.AddItem(imageFlex, 0, 2, false)
+	mainContent.AddItem(mangaDataFlex, 0, 3, false)
 
 	return mainContent
 }
