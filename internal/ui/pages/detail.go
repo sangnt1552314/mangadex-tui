@@ -2,10 +2,12 @@ package pages
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 
+	"github.com/sangnt1552314/mangadex-tui/internal/api"
 	"github.com/sangnt1552314/mangadex-tui/internal/models"
 	"github.com/sangnt1552314/mangadex-tui/internal/services"
 	"github.com/sangnt1552314/mangadex-tui/internal/ui/interfaces"
@@ -134,8 +136,8 @@ func (p *DetailPage) setupMainContent() tview.Primitive {
 	categoryDataFlex := tview.NewFlex()
 	p.setupCategoryDataFlex(categoryDataFlex)
 
-	chapterDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
-	chapterDataFlex.SetBorder(true).SetTitle("Chapters").SetTitleAlign(tview.AlignLeft)
+	chapterDataFlex := tview.NewFlex()
+	p.setupChapterDataFlex(chapterDataFlex)
 
 	bottomMangaDataFlex.AddItem(categoryDataFlex, 0, 3, false)
 	bottomMangaDataFlex.AddItem(chapterDataFlex, 0, 7, false)
@@ -247,4 +249,41 @@ func (p *DetailPage) setupCategoryDataFlex(flex *tview.Flex) {
 		SetDynamicColors(true)
 
 	flex.AddItem(tagsText, 0, 1, false)
+}
+
+func (p *DetailPage) setupChapterDataFlex(flex *tview.Flex) {
+	flex.SetDirection(tview.FlexRow)
+	flex.SetBorder(true).SetTitle("Chapters").SetTitleAlign(tview.AlignLeft)
+
+	params := models.ChapterQueryParams{
+		MangaId:            p.manga.ID,
+		Limit:              100,
+		TranslatedLanguage: []string{"en"},
+	}
+
+	chapterList := tview.NewTable()
+
+	chapterList.SetCell(0, 0, tview.NewTableCell("Chapter").
+		SetSelectable(false).
+		SetTextColor(tcell.ColorOrange))
+
+	chapterList.SetCell(0, 1, tview.NewTableCell("Title").
+		SetSelectable(false).
+		SetTextColor(tcell.ColorYellow))
+
+	chapters, err := api.GetChapters(params)
+
+	if err != nil {
+		log.Println("Error fetching manga data:", err)
+		return
+	}
+
+	for i, chapter := range chapters {
+		chapterCopy := chapter
+		titleCell := tview.NewTableCell(chapter.Attributes.Title).SetReference(&chapterCopy).SetMaxWidth(30)
+		chapterList.SetCell(i+1, 0, tview.NewTableCell(fmt.Sprintf("Chapter %s", chapter.Attributes.Chapter)))
+		chapterList.SetCell(i+1, 1, titleCell)
+	}
+
+	flex.AddItem(chapterList, 0, 1, false)
 }

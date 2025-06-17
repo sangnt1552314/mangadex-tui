@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -41,6 +42,7 @@ func NewClient() *Client {
 }
 
 func (c *Client) Get(url string) (*http.Response, error) {
+	log.Printf("Making GET request to: %s", c.baseURL+url)
 	req, err := http.NewRequest("GET", c.baseURL+url, nil)
 	if err != nil {
 		return nil, err
@@ -113,6 +115,33 @@ func GetManga(params models.MangaQueryParams) ([]models.Manga, error) {
 	return mangaList.Data, nil
 }
 
+func GetChapters(params models.ChapterQueryParams) ([]models.Chapter, error) {
+	client := NewClient()
+
+	url := getChapterApiUrl(params)
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var chapterList models.ChapterListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&chapterList); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if chapterList.Result != "ok" {
+		return nil, fmt.Errorf("API error: %s", chapterList.Result)
+	}
+
+	if len(chapterList.Data) == 0 {
+		return nil, fmt.Errorf("no chapters found")
+	}
+
+	return chapterList.Data, nil
+}
+
 func GetMangaCover(mangaID string) (*models.CoverListResponse, error) {
 	client := NewClient()
 
@@ -169,6 +198,28 @@ func getMangaApiUrl(params models.MangaQueryParams) string {
 	}
 
 	url := "/manga" + queryParams
+
+	return url
+}
+
+func getChapterApiUrl(params models.ChapterQueryParams) string {
+	queryParams := fmt.Sprintf("?limit=%d&offset=%d", params.Limit, params.Offset)
+
+	if len(params.Ids) > 0 {
+		for _, id := range params.Ids {
+			queryParams += fmt.Sprintf("&ids[]=%s", id)
+		}
+	}
+
+	if params.MangaId != "" {
+		queryParams += fmt.Sprintf("&manga=%s", params.MangaId)
+	}
+
+	for _, lang := range params.TranslatedLanguage {
+		queryParams += fmt.Sprintf("&translatedLanguage[]=%s", lang)
+	}
+
+	url := "/chapter" + queryParams
 
 	return url
 }
