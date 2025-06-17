@@ -3,11 +3,12 @@ package models
 import "time"
 
 type ChapterQueryParams struct {
-	Limit              int      `json:"limit"`
-	Offset             int      `json:"offset"`
-	Ids                []string `json:"ids"`
-	MangaId            string   `json:"manga"`
-	TranslatedLanguage []string `json:"translatedLanguage"`
+	Limit              int               `json:"limit"`
+	Offset             int               `json:"offset"`
+	Ids                []string          `json:"ids"`
+	MangaId            string            `json:"manga"`
+	TranslatedLanguage []string          `json:"translatedLanguage"`
+	Order              map[string]string `json:"order"`
 }
 
 type Chapter struct {

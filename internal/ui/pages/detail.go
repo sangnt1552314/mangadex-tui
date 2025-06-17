@@ -17,12 +17,16 @@ type DetailPage struct {
 	app      interfaces.AppInterface
 	rootView *tview.Flex
 	manga    *models.Manga
+	limit    int
+	offset   int
 }
 
 func NewDetailPage(app interfaces.AppInterface) *DetailPage {
 	return &DetailPage{
 		app:      app,
 		rootView: tview.NewFlex(),
+		limit:    100,
+		offset:   0,
 	}
 }
 
@@ -257,19 +261,25 @@ func (p *DetailPage) setupChapterDataFlex(flex *tview.Flex) {
 
 	params := models.ChapterQueryParams{
 		MangaId:            p.manga.ID,
-		Limit:              100,
+		Limit:              p.limit,
+		Offset:             p.offset,
 		TranslatedLanguage: []string{"en"},
+		Order: map[string]string{
+			"volume":  "asc",
+			"chapter": "asc",
+		},
 	}
 
-	chapterList := tview.NewTable()
+	chapterList := tview.NewTable().SetFixed(1, 0)
+	p.setChapterListData(chapterList, params)
 
-	chapterList.SetCell(0, 0, tview.NewTableCell("Chapter").
-		SetSelectable(false).
-		SetTextColor(tcell.ColorOrange))
+	flex.AddItem(chapterList, 0, 1, false)
+}
 
-	chapterList.SetCell(0, 1, tview.NewTableCell("Title").
-		SetSelectable(false).
-		SetTextColor(tcell.ColorYellow))
+func (p *DetailPage) setChapterListData(list *tview.Table, params models.ChapterQueryParams) {
+	list.Clear()
+
+	p.setChapterListHeader(list)
 
 	chapters, err := api.GetChapters(params)
 
@@ -281,9 +291,17 @@ func (p *DetailPage) setupChapterDataFlex(flex *tview.Flex) {
 	for i, chapter := range chapters {
 		chapterCopy := chapter
 		titleCell := tview.NewTableCell(chapter.Attributes.Title).SetReference(&chapterCopy).SetMaxWidth(30)
-		chapterList.SetCell(i+1, 0, tview.NewTableCell(fmt.Sprintf("Chapter %s", chapter.Attributes.Chapter)))
-		chapterList.SetCell(i+1, 1, titleCell)
+		list.SetCell(i+1, 0, tview.NewTableCell(fmt.Sprintf("Chapter %s", chapter.Attributes.Chapter)))
+		list.SetCell(i+1, 1, titleCell)
 	}
+}
 
-	flex.AddItem(chapterList, 0, 1, false)
+func (p *DetailPage) setChapterListHeader(list *tview.Table) {
+	list.SetCell(0, 0, tview.NewTableCell("Chapter").
+		SetSelectable(false).
+		SetTextColor(tcell.ColorOrange))
+
+	list.SetCell(0, 1, tview.NewTableCell("Title").
+		SetSelectable(false).
+		SetTextColor(tcell.ColorYellow))
 }
