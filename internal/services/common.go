@@ -140,3 +140,77 @@ func GetMangaImage(mangaID string, size int, isRandomImage bool) image.Image {
 
 	return img
 }
+
+func GetMangaImageByFilename(mangaID string, filename string, size int) image.Image {
+	coverURL := api.GetCoverURL(mangaID, filename, size)
+	resp, err := http.Get(coverURL)
+	if err != nil {
+		log.Println("Error fetching cover image:", err)
+		return nil
+	}
+	defer resp.Body.Close()
+
+	imgData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Error reading cover image data:", err)
+		return nil
+	}
+	contentType := http.DetectContentType(imgData)
+
+	var img image.Image
+	switch contentType {
+	case "image/jpeg":
+		img, err = jpeg.Decode(bytes.NewReader(imgData))
+	case "image/png":
+		img, err = png.Decode(bytes.NewReader(imgData))
+	default:
+		log.Printf("Unsupported image type: %s", contentType)
+		return nil
+	}
+
+	if err != nil {
+		log.Printf("Error decoding image: %v", err)
+		return nil
+	}
+
+	return img
+}
+
+func GetCoverFileName(manga models.Manga) string {
+	for _, rel := range manga.Relationships {
+		if rel.Type == "cover_art" {
+			return rel.Attributes.FileName
+		}
+	}
+	return ""
+}
+
+func GetAuthorName(manga models.Manga) string {
+	if len(manga.Relationships) == 0 {
+		return "Unknown Author"
+	}
+
+	for _, rel := range manga.Relationships {
+		if rel.Type == "author" {
+			if name := rel.Attributes.Name; name != "" {
+				return name
+			}
+		}
+	}
+	return "Unknown Author"
+}
+
+func GetArtistName(manga models.Manga) string {
+	if len(manga.Relationships) == 0 {
+		return "Unknown Artist"
+	}
+
+	for _, rel := range manga.Relationships {
+		if rel.Type == "artist" {
+			if name := rel.Attributes.Name; name != "" {
+				return name
+			}
+		}
+	}
+	return "Unknown Artist"
+}

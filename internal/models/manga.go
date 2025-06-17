@@ -39,7 +39,7 @@ type Manga struct {
 		AvailableTranslatedLanguages   []string            `json:"availableTranslatedLanguages"`
 		LatestUploadedChapter          string              `json:"latestUploadedChapter"`
 	} `json:"attributes"`
-	Relationships []Relationship `json:"relationships"`
+	Relationships []MangaRelationship `json:"relationships"`
 }
 
 type Tag struct {
@@ -52,6 +52,42 @@ type Tag struct {
 		Version     int               `json:"version"`
 	} `json:"attributes"`
 	Relationships []Relationship `json:"relationships"`
+}
+
+type MangaRelationship struct {
+	ID         string `json:"id"`
+	Type       string `json:"type"`
+	Attributes struct {
+		// Common fields
+		Name      string            `json:"name"`
+		ImageUrl  *string           `json:"imageUrl"`
+		Biography map[string]string `json:"biography"`
+		CreatedAt string            `json:"createdAt"`
+		UpdatedAt string            `json:"updatedAt"`
+		Version   int               `json:"version"`
+
+		// Social media links
+		Twitter   *string `json:"twitter"`
+		Pixiv     *string `json:"pixiv"`
+		MelonBook *string `json:"melonBook"`
+		FanBox    *string `json:"fanBox"`
+		Booth     *string `json:"booth"`
+		Namicomi  *string `json:"namicomi"`
+		NicoVideo *string `json:"nicoVideo"`
+		Skeb      *string `json:"skeb"`
+		Fantia    *string `json:"fantia"`
+		Tumblr    *string `json:"tumblr"`
+		Youtube   *string `json:"youtube"`
+		Weibo     *string `json:"weibo"`
+		Naver     *string `json:"naver"`
+		Website   *string `json:"website"`
+
+		// Cover art specific fields
+		Description string `json:"description"`
+		Volume      string `json:"volume"`
+		FileName    string `json:"fileName"`
+		Locale      string `json:"locale"`
+	} `json:"attributes"`
 }
 
 type Relationship struct {

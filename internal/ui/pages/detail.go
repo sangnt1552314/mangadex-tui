@@ -118,8 +118,8 @@ func (p *DetailPage) setupMainContent() tview.Primitive {
 	mainContent.SetBorder(true)
 
 	imageFlex := tview.NewImage()
-	if img := services.GetMangaImage(p.manga.ID, 512, true); img != nil {
-		imageFlex.SetImage(img)
+	if img := services.GetMangaImageByFilename(p.manga.ID, services.GetCoverFileName(*p.manga), 512); img != nil {
+		imageFlex.SetImage(img).SetAlign(tview.AlignTop, tview.AlignCenter)
 	}
 
 	mangaDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -131,14 +131,14 @@ func (p *DetailPage) setupMainContent() tview.Primitive {
 	bottomMangaDataFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
 	bottomMangaDataFlex.SetBorder(false)
 
-	categoryDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
-	categoryDataFlex.SetBorder(true).SetTitle("Categories").SetTitleAlign(tview.AlignLeft)
+	categoryDataFlex := tview.NewFlex()
+	p.setupCategoryDataFlex(categoryDataFlex)
 
 	chapterDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
 	chapterDataFlex.SetBorder(true).SetTitle("Chapters").SetTitleAlign(tview.AlignLeft)
 
-	bottomMangaDataFlex.AddItem(categoryDataFlex, 0, 1, false)
-	bottomMangaDataFlex.AddItem(chapterDataFlex, 0, 1, false)
+	bottomMangaDataFlex.AddItem(categoryDataFlex, 0, 3, false)
+	bottomMangaDataFlex.AddItem(chapterDataFlex, 0, 7, false)
 
 	mangaDataFlex.AddItem(topMangaDataFlex, 0, 4, false)
 	mangaDataFlex.AddItem(bottomMangaDataFlex, 0, 6, false)
@@ -193,13 +193,20 @@ func (p *DetailPage) setupTopMangaDataFlex(flex *tview.Flex) {
 	statusText := tview.NewTextView().
 		SetText(fmt.Sprintf("Status: [%s]%s[-]",
 			statusColor.TrueColor(),
-			services.FormatTextStatus(status)))
-	statusText.SetDynamicColors(true)
+			services.FormatTextStatus(status))).
+		SetDynamicColors(true)
 
-	// Tags
-	// tagsText := tview.NewTextView().
-	// 	SetText(fmt.Sprintf("Tags: %s", services.FormatTags(p.manga.Attributes.Tags)))
-	// tagsText.SetDynamicColors(true)
+	// Author
+	authorName := services.GetAuthorName(*p.manga)
+	authorText := tview.NewTextView().
+		SetText(fmt.Sprintf("Author: %s", authorName)).
+		SetTextColor(tcell.ColorLightCyan)
+
+	// Artist
+	artistName := services.GetArtistName(*p.manga)
+	artistText := tview.NewTextView().
+		SetText(fmt.Sprintf("Artist: %s", artistName)).
+		SetTextColor(tcell.ColorLightCyan)
 
 	// Description
 	var description string
@@ -222,8 +229,22 @@ func (p *DetailPage) setupTopMangaDataFlex(flex *tview.Flex) {
 	leftFlex.AddItem(altTitleView, 0, 1, false)
 	leftFlex.AddItem(yearText, 0, 1, false)
 	leftFlex.AddItem(statusText, 0, 1, false)
+	leftFlex.AddItem(authorText, 0, 1, false)
+	leftFlex.AddItem(artistText, 0, 1, false)
 
 	rightFlex.AddItem(descText, 0, 1, false)
 	flex.AddItem(leftFlex, 0, 1, false)
 	flex.AddItem(rightFlex, 0, 2, false)
+}
+
+func (p *DetailPage) setupCategoryDataFlex(flex *tview.Flex) {
+	flex.SetDirection(tview.FlexRow)
+	flex.SetBorder(true).SetTitle("Categories").SetTitleAlign(tview.AlignLeft)
+
+	// Tags
+	tagsText := tview.NewTextView().
+		SetText(fmt.Sprintf("Tags: %s", services.FormatTags(p.manga.Attributes.Tags))).
+		SetDynamicColors(true)
+
+	flex.AddItem(tagsText, 0, 1, false)
 }

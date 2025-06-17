@@ -119,6 +119,11 @@ func (p *HomePage) setupMainContent() tview.Primitive {
 		Order: map[string]string{
 			models.OrderByFollowCount: "desc",
 		},
+		Includes: []string{
+			"cover_art",
+			"author",
+			"artist",
+		},
 	}
 	featureMangaList := tview.NewTable()
 	p.setTableHeaderManga(featureMangaList)
@@ -129,6 +134,11 @@ func (p *HomePage) setupMainContent() tview.Primitive {
 		Limit: 9,
 		Order: map[string]string{
 			models.OrderByCreatedAt: "desc",
+		},
+		Includes: []string{
+			"cover_art",
+			"author",
+			"artist",
 		},
 	}
 	latestMangaList := tview.NewTable()
@@ -148,6 +158,11 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 		Limit: limit,
 		Order: map[string]string{
 			models.OrderByRating: "desc",
+		},
+		Includes: []string{
+			"cover_art",
+			"author",
+			"artist",
 		},
 	}
 
@@ -214,7 +229,8 @@ func (p *HomePage) buildPopularContent(popularContent *tview.Flex, manga models.
 	// imageFlex.SetSize(30, 30)
 
 	// Get and set the image
-	if img := services.GetMangaImage(manga.ID, 256, true); img != nil {
+	coverFileName := services.GetCoverFileName(manga)
+	if img := services.GetMangaImageByFilename(manga.ID, coverFileName, 256); img != nil {
 		imageFlex.SetImage(img)
 	}
 
