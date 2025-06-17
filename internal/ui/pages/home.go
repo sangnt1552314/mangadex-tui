@@ -60,8 +60,8 @@ func (p *HomePage) Init(app interfaces.AppInterface) {
 	menu := p.setupMenu()
 
 	// Add components to the root view
-	p.rootView.AddItem(mainContent, 0, 9, false)
-	p.rootView.AddItem(menu, 0, 1, false)
+	p.rootView.AddItem(mainContent, 0, 1, false)
+	p.rootView.AddItem(menu, 3, 0, false)
 }
 
 func (p *HomePage) setupMenu() tview.Primitive {
@@ -215,8 +215,8 @@ func (p *HomePage) setupPoplarFlex(popularFlex *tview.Flex) tview.Primitive {
 	popularNavigationFlex.AddItem(rightButton, 0, 1, false)
 
 	// Add popular manga to the content area
-	popularFlex.AddItem(popularContent, 0, 9, false)
-	popularFlex.AddItem(popularNavigationFlex, 0, 1, false)
+	popularFlex.AddItem(popularContent, 0, 1, false)
+	popularFlex.AddItem(popularNavigationFlex, 1, 0, false)
 
 	return popularFlex
 }

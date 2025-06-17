@@ -50,7 +50,7 @@ func (p *AboutPage) Init(app interfaces.AppInterface) {
 
 	// Layout - Menu
 	menu := p.setupMenu()
-	p.rootView.AddItem(menu, 0, 1, false)
+	p.rootView.AddItem(menu, 3, 0, false)
 }
 
 func (p *AboutPage) setupMenu() tview.Primitive {

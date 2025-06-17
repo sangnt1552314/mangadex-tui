@@ -19,6 +19,7 @@ type DetailPage struct {
 	manga    *models.Manga
 	limit    int
 	offset   int
+	total    int
 }
 
 func NewDetailPage(app interfaces.AppInterface) *DetailPage {
@@ -27,6 +28,7 @@ func NewDetailPage(app interfaces.AppInterface) *DetailPage {
 		rootView: tview.NewFlex(),
 		limit:    100,
 		offset:   0,
+		total:    0,
 	}
 }
 
@@ -73,8 +75,8 @@ func (p *DetailPage) updateUI() {
 
 	mainContent := p.setupMainContent()
 
-	p.rootView.AddItem(mainContent, 0, 9, false)
-	p.rootView.AddItem(menu, 0, 1, false)
+	p.rootView.AddItem(mainContent, 0, 1, false)
+	p.rootView.AddItem(menu, 3, 0, false)
 }
 
 func (p *DetailPage) setupMenu() tview.Primitive {
@@ -121,11 +123,12 @@ func (p *DetailPage) setupMainContent() tview.Primitive {
 	}
 
 	mainContent := tview.NewFlex().SetDirection(tview.FlexColumn)
-	mainContent.SetBorder(true)
+	mainContent.SetBorder(false)
 
 	imageFlex := tview.NewImage()
 	if img := services.GetMangaImageByFilename(p.manga.ID, services.GetCoverFileName(*p.manga), 512); img != nil {
-		imageFlex.SetImage(img).SetAlign(tview.AlignTop, tview.AlignCenter)
+		imageFlex.SetImage(img)
+		// imageFlex.SetAlign(tview.AlignCenter, tview.AlignCenter)
 	}
 
 	mangaDataFlex := tview.NewFlex().SetDirection(tview.FlexRow)
@@ -259,6 +262,24 @@ func (p *DetailPage) setupChapterDataFlex(flex *tview.Flex) {
 	flex.SetDirection(tview.FlexRow)
 	flex.SetBorder(true).SetTitle("Chapters").SetTitleAlign(tview.AlignLeft)
 
+	simpleChapterResp, err := api.GetChapterListResponse(models.ChapterQueryParams{
+		MangaId:            p.manga.ID,
+		Limit:              1,
+		Offset:             0,
+		TranslatedLanguage: []string{"en"},
+		Order: map[string]string{
+			"volume":  "asc",
+			"chapter": "asc",
+		},
+	})
+
+	if err != nil {
+		log.Println("Error fetching manga data:", err)
+		return
+	}
+
+	p.total = simpleChapterResp.Total
+
 	params := models.ChapterQueryParams{
 		MangaId:            p.manga.ID,
 		Limit:              p.limit,
@@ -273,7 +294,52 @@ func (p *DetailPage) setupChapterDataFlex(flex *tview.Flex) {
 	chapterList := tview.NewTable().SetFixed(1, 0)
 	p.setChapterListData(chapterList, params)
 
+	navigationFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	navigationFlex.SetBorder(false)
+	leftButton := tview.NewButton("◀ Previous")
+	rightButton := tview.NewButton("Next ▶")
+	leftButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	rightButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	leftButton.SetSelectedFunc(func() {
+		if p.offset > 0 {
+			p.offset -= p.limit
+			params.Offset = p.offset
+			p.setChapterListData(chapterList, params)
+		}
+		if p.offset < 0 {
+			p.offset = 0
+			params.Offset = p.offset
+			p.setChapterListData(chapterList, params)
+		}
+		if p.offset >= p.total {
+			p.offset = p.total - p.limit
+			params.Offset = p.offset
+			p.setChapterListData(chapterList, params)
+		}
+	})
+	rightButton.SetSelectedFunc(func() {
+		if p.offset+p.limit < p.total {
+			p.offset += p.limit
+			params.Offset = p.offset
+			p.setChapterListData(chapterList, params)
+		}
+		if p.offset >= p.total {
+			p.offset = p.total - p.limit
+			params.Offset = p.offset
+			p.setChapterListData(chapterList, params)
+		}
+		if p.offset < 0 {
+			p.offset = 0
+			params.Offset = p.offset
+			p.setChapterListData(chapterList, params)
+		}
+	})
+	navigationFlex.AddItem(leftButton, 0, 1, false)
+	navigationFlex.AddItem(rightButton, 0, 1, false)
+
 	flex.AddItem(chapterList, 0, 1, false)
+	flex.AddItem(navigationFlex, 1, 0, false)
+
 }
 
 func (p *DetailPage) setChapterListData(list *tview.Table, params models.ChapterQueryParams) {

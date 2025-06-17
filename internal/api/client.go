@@ -142,6 +142,29 @@ func GetChapters(params models.ChapterQueryParams) ([]models.Chapter, error) {
 	return chapterList.Data, nil
 }
 
+func GetChapterListResponse(params models.ChapterQueryParams) (*models.ChapterListResponse, error) {
+	client := NewClient()
+
+	url := getChapterApiUrl(params)
+
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var chapterList models.ChapterListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&chapterList); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if chapterList.Result != "ok" {
+		return nil, fmt.Errorf("API error: %s", chapterList.Result)
+	}
+
+	return &chapterList, nil
+}
+
 func GetMangaCover(mangaID string) (*models.CoverListResponse, error) {
 	client := NewClient()
 

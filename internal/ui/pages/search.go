@@ -51,8 +51,8 @@ func (p *SearchPage) Init(app interfaces.AppInterface) {
 	menu := p.setupMenu()
 
 	// Add components to the root view
-	p.rootView.AddItem(mainContent, 0, 9, true)
-	p.rootView.AddItem(menu, 0, 1, false)
+	p.rootView.AddItem(mainContent, 0, 1, true)
+	p.rootView.AddItem(menu, 3, 0, false)
 }
 
 func (p *SearchPage) setupMenu() tview.Primitive {
