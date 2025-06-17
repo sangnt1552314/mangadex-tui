@@ -356,7 +356,6 @@ func (p *HomePage) showMangaDetailModal(manga *models.Manga) {
 		SetBackgroundColor(tcell.ColorBlack).
 		AddButtons([]string{"Close", "View Detail"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			log.Println("Modal button pressed:", buttonLabel)
 			if buttonLabel == "Close" {
 				p.app.SetRoot(p.rootView, true)
 			} else if buttonLabel == "View Detail" {
@@ -364,7 +363,6 @@ func (p *HomePage) showMangaDetailModal(manga *models.Manga) {
 				detailPage.SetManga(manga)
 				p.app.RestorePages()
 				p.app.SwitchToPage("detail")
-				log.Println("Modal: Switching to detail page for manga ID:", manga.ID)
 			}
 		})
 

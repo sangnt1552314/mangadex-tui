@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -42,7 +41,6 @@ func NewClient() *Client {
 }
 
 func (c *Client) Get(url string) (*http.Response, error) {
-	log.Printf("Making GET request to: %s", c.baseURL+url)
 	req, err := http.NewRequest("GET", c.baseURL+url, nil)
 	if err != nil {
 		return nil, err

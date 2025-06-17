@@ -26,6 +26,7 @@ func NewDetailPage(app interfaces.AppInterface) *DetailPage {
 	return &DetailPage{
 		app:      app,
 		rootView: tview.NewFlex(),
+		manga:    nil,
 		limit:    100,
 		offset:   0,
 		total:    0,
@@ -360,6 +361,20 @@ func (p *DetailPage) setChapterListData(list *tview.Table, params models.Chapter
 		list.SetCell(i+1, 0, tview.NewTableCell(fmt.Sprintf("Chapter %s", chapter.Attributes.Chapter)))
 		list.SetCell(i+1, 1, titleCell)
 	}
+
+	list.SetSelectable(true, false)
+
+	list.SetSelectedFunc(func(row, column int) {
+		if row == 0 {
+			return // Skip header row
+		}
+		selectedChapter := list.GetCell(row, column).GetReference().(*models.Chapter)
+		if selectedChapter != nil {
+			readerPage := p.app.GetPageObject("reader").(*ReaderPage)
+			readerPage.SetData(p.manga, selectedChapter)
+			p.app.SwitchToPage("reader")
+		}
+	})
 }
 
 func (p *DetailPage) setChapterListHeader(list *tview.Table) {
