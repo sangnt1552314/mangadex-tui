@@ -358,7 +358,8 @@ func (p *DetailPage) setChapterListData(list *tview.Table, params models.Chapter
 	for i, chapter := range chapters {
 		chapterCopy := chapter
 		titleCell := tview.NewTableCell(chapter.Attributes.Title).SetReference(&chapterCopy).SetMaxWidth(30)
-		list.SetCell(i+1, 0, tview.NewTableCell(fmt.Sprintf("Chapter %s", chapter.Attributes.Chapter)))
+		chapterCell := tview.NewTableCell(fmt.Sprintf("Chapter %s", chapter.Attributes.Chapter)).SetReference(&chapterCopy).SetMaxWidth(20)
+		list.SetCell(i+1, 0, chapterCell)
 		list.SetCell(i+1, 1, titleCell)
 	}
 
@@ -368,10 +369,24 @@ func (p *DetailPage) setChapterListData(list *tview.Table, params models.Chapter
 		if row == 0 {
 			return // Skip header row
 		}
-		selectedChapter := list.GetCell(row, column).GetReference().(*models.Chapter)
+
+		cell := list.GetCell(row, 0)
+		if cell == nil {
+			log.Printf("Error: Invalid cell at row %d", row)
+			return
+		}
+
+		ref := cell.GetReference()
+		if ref == nil {
+			log.Printf("Error: No chapter reference at row %d", row)
+			return
+		}
+
+		selectedChapter := ref.(*models.Chapter)
 		if selectedChapter != nil {
 			readerPage := p.app.GetPageObject("reader").(*ReaderPage)
 			readerPage.SetData(p.manga, selectedChapter)
+			p.app.RestorePages()
 			p.app.SwitchToPage("reader")
 		}
 	})

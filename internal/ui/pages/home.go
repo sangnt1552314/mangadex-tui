@@ -354,7 +354,7 @@ func (p *HomePage) showMangaDetailModal(manga *models.Manga) {
 	modal := tview.NewModal().
 		SetText(content).
 		SetBackgroundColor(tcell.ColorBlack).
-		AddButtons([]string{"Close", "View Detail"}).
+		AddButtons([]string{"View Detail", "Close"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			if buttonLabel == "Close" {
 				p.app.SetRoot(p.rootView, true)

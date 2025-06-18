@@ -67,6 +67,8 @@ func (p *ReaderPage) updateUI() {
 		return
 	}
 
+	p.rootView.Clear()
+
 	// Layout
 	p.rootView.SetDirection(tview.FlexRow).
 		SetBorder(false)
@@ -92,18 +94,35 @@ func (p *ReaderPage) setupMenu() tview.Primitive {
 		p.app.SwitchToPage("home")
 	})
 
-	menuFlex.AddItem(homeButton, 0, 1, false)
+	searchButton := tview.NewButton("🔍 Search")
+	searchButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorPurple).Background(tcell.ColorBlack))
+	searchButton.SetSelectedFunc(func() {
+		p.app.SwitchToPage("search")
+	})
+
+	aboutButton := tview.NewButton("ℹ About")
+	aboutButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorGreen).Background(tcell.ColorBlack))
+	aboutButton.SetSelectedFunc(func() {
+		p.app.SwitchToPage("about")
+	})
+
+	exitButton := tview.NewButton("⏻ Exit")
+	exitButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorRed).Background(tcell.ColorBlack))
+	exitButton.SetSelectedFunc(func() {
+		p.app.Stop()
+	})
+
+	menuFlex.AddItem(homeButton, 9, 1, false)
+	menuFlex.AddItem(searchButton, 9, 1, false)
+	menuFlex.AddItem(aboutButton, 9, 1, false)
+	menuFlex.AddItem(exitButton, 9, 1, false)
 
 	return menuFlex
 }
 
 func (p *ReaderPage) setupMainContent() tview.Primitive {
 	mainContent := tview.NewTextView().
-		SetText("Reader Page Content").
-		SetTextAlign(tview.AlignCenter).
-		SetDynamicColors(true).
-		SetBorder(true).
-		SetTitle("Reader")
+		SetBorder(true)
 
 	mainContent.SetBackgroundColor(tcell.ColorBlack)
 	mainContent.SetBorderColor(tcell.ColorWhite)
