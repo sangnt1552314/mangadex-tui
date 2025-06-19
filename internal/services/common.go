@@ -176,6 +176,59 @@ func GetMangaImageByFilename(mangaID string, filename string, size int) image.Im
 	return img
 }
 
+func GetImagesByChapterId(chapterId string) ([]image.Image, error) {
+	imageResponse, err := api.GetChapterImageResponse(chapterId)
+	if err != nil {
+		log.Println("Error fetching chapter images:", err)
+		return nil, err
+	}
+	if len(imageResponse.Chapter.Data) == 0 {
+		log.Println("No images found for chapter:", chapterId)
+		return nil, nil
+	}
+	var images []image.Image
+	for _, imageName := range imageResponse.Chapter.Data {
+		imageURL := fmt.Sprintf("%s/data/%s/%s", imageResponse.BaseURL, imageResponse.Chapter.Hash, imageName)
+		log.Printf("Fetching image: %s", imageURL)
+		resp, err := http.Get(imageURL)
+		if err != nil {
+			log.Println("Error fetching chapter image:", err)
+			continue
+		}
+		defer resp.Body.Close()
+
+		imgData, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Error reading chapter image data:", err)
+			continue
+		}
+		contentType := http.DetectContentType(imgData)
+
+		var img image.Image
+		switch contentType {
+		case "image/jpeg":
+			img, err = jpeg.Decode(bytes.NewReader(imgData))
+		case "image/png":
+			img, err = png.Decode(bytes.NewReader(imgData))
+		default:
+			log.Printf("Unsupported image type: %s", contentType)
+			continue
+		}
+
+		if err != nil {
+			log.Printf("Error decoding chapter image: %v", err)
+			continue
+		}
+
+		images = append(images, img)
+	}
+	if len(images) == 0 {
+		log.Println("No valid images found for chapter:", chapterId)
+		return nil, nil
+	}
+	return images, nil
+}
+
 func GetCoverFileName(manga models.Manga) string {
 	for _, rel := range manga.Relationships {
 		if rel.Type == "cover_art" {

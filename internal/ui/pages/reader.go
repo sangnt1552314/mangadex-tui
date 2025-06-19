@@ -1,9 +1,12 @@
 package pages
 
 import (
+	"image"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/sangnt1552314/mangadex-tui/internal/models"
+	"github.com/sangnt1552314/mangadex-tui/internal/services"
 	"github.com/sangnt1552314/mangadex-tui/internal/ui/interfaces"
 )
 
@@ -12,6 +15,7 @@ type ReaderPage struct {
 	rootView *tview.Flex
 	manga    *models.Manga
 	chapter  *models.Chapter
+	images   []image.Image
 }
 
 func NewReaderPage(app interfaces.AppInterface) *ReaderPage {
@@ -20,6 +24,7 @@ func NewReaderPage(app interfaces.AppInterface) *ReaderPage {
 		rootView: tview.NewFlex(),
 		manga:    nil,
 		chapter:  nil,
+		images:   nil,
 	}
 }
 
@@ -29,14 +34,6 @@ func (p *ReaderPage) Name() string {
 
 func (p *ReaderPage) View() tview.Primitive {
 	return p.rootView
-}
-
-func (p *ReaderPage) SetManga(manga *models.Manga) {
-	p.manga = manga
-}
-
-func (p *ReaderPage) SetChapter(chapter *models.Chapter) {
-	p.chapter = chapter
 }
 
 func (p *ReaderPage) SetData(manga *models.Manga, chapter *models.Chapter) {
@@ -121,11 +118,63 @@ func (p *ReaderPage) setupMenu() tview.Primitive {
 }
 
 func (p *ReaderPage) setupMainContent() tview.Primitive {
-	mainContent := tview.NewTextView().
-		SetBorder(true)
+	currentImageIndex := 0
 
-	mainContent.SetBackgroundColor(tcell.ColorBlack)
-	mainContent.SetBorderColor(tcell.ColorWhite)
+	images, err := services.GetImagesByChapterId(p.chapter.ID)
+	p.images = images
+
+	if err != nil {
+		mainContent := tview.NewTextView().
+			SetText("Error loading chapter images: " + err.Error()).
+			SetTextColor(tcell.ColorRed).
+			SetBackgroundColor(tcell.ColorBlack).
+			SetBorder(true)
+		return mainContent
+	}
+
+	mainContent := tview.NewFlex().SetDirection(tview.FlexRow)
+	mainContent.SetBorder(true)
+
+	imageFlex := tview.NewImage()
+	p.showImage(currentImageIndex, imageFlex)
+
+	navigationFlex := tview.NewFlex().SetDirection(tview.FlexColumn)
+	navigationFlex.SetBorder(false)
+	leftButton := tview.NewButton("◀ Previous")
+	rightButton := tview.NewButton("Next ▶")
+	leftButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	rightButton.SetStyle(tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorBlack))
+	leftButton.SetSelectedFunc(func() {
+		currentImageIndex--
+		if currentImageIndex < 0 {
+			currentImageIndex = 0
+		}
+		p.showImage(currentImageIndex, imageFlex)
+	})
+	rightButton.SetSelectedFunc(func() {
+		currentImageIndex++
+		if currentImageIndex >= len(images) {
+			currentImageIndex = len(images) - 1
+		}
+		p.showImage(currentImageIndex, imageFlex)
+	})
+
+	navigationFlex.AddItem(leftButton, 0, 1, false)
+	navigationFlex.AddItem(rightButton, 0, 1, false)
+
+	mainContent.AddItem(imageFlex, 0, 1, false)
+	mainContent.AddItem(navigationFlex, 1, 0, false)
 
 	return mainContent
+}
+
+func (p *ReaderPage) showImage(i int, imageFlex *tview.Image) {
+	image := p.images[i]
+	if image == nil {
+		imageFlex.SetImage(nil)
+		return
+	}
+
+	imageFlex.SetImage(image)
+	imageFlex.SetBackgroundColor(tcell.ColorBlack)
 }

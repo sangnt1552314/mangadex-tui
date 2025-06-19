@@ -199,6 +199,30 @@ func GetCoverURL(mangaID string, filename string, size int) string {
 	}
 }
 
+func GetChapterImageResponse(chapterId string) (*models.ImageResponse, error) {
+	client := NewClient()
+
+	url := fmt.Sprintf("/at-home/server/%s", chapterId)
+
+	resp, err := client.Get(url)
+
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var imageResponse models.ImageResponse
+	if err := json.NewDecoder(resp.Body).Decode(&imageResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	if imageResponse.Result != "ok" {
+		return nil, fmt.Errorf("API error: %s", imageResponse.Result)
+	}
+
+	return &imageResponse, nil
+}
+
 func getMangaApiUrl(params models.MangaQueryParams) string {
 	queryParams := fmt.Sprintf("?limit=%d", params.Limit)
 

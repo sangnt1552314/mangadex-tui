@@ -37,6 +37,7 @@ type ChapterRelationship struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
 }
+
 type ChapterListResponse struct {
 	Data     []Chapter `json:"data"`
 	Limit    int       `json:"limit"`
